@@ -1,0 +1,77 @@
+name: Atualizar dados e publicar site
+
+on:
+  schedule:
+    # Horários em UTC: 07:17 e 19:17 em Brasília, todos os dias.
+    - cron: "17 10 * * *"
+    - cron: "17 22 * * *"
+  workflow_dispatch:   # botão "Run workflow" para rodar na hora
+  push:
+    branches: [main]
+    paths-ignore: ["dados/**"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: atualizar
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Coletar combustíveis (ANP)
+        run: python robo/coletar_anp.py
+        continue-on-error: true
+
+      - name: Coletar câmbio, juros e inflação (Banco Central)
+        run: python robo/coletar_bcb.py
+        continue-on-error: true
+
+      - name: Coletar energia (ANEEL)
+        run: python robo/coletar_aneel.py
+        continue-on-error: true
+
+      - name: Guardar os dados novos no repositório
+        run: |
+          git config user.name "robo-bolso-hoje"
+          git config user.email "robo@users.noreply.github.com"
+          git add dados
+          if git diff --cached --quiet; then
+            echo "Sem dados novos."
+          else
+            git commit -m "Dados atualizados em $(date -u +'%Y-%m-%d %H:%M') UTC"
+            git push
+          fi
+
+      - name: Gerar o site
+        run: python robo/gerar_site.py
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  publicar:
+    needs: atualizar
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

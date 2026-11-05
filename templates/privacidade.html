@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% block titulo %}Política de privacidade | {{ cfg.nome_site }}{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), (None, "Privacidade")]) }}
+<h1>Política de privacidade</h1>
+<p class="meta">Atualizada em {{ ano }}.</p>
+<p>O {{ cfg.nome_site }} não pede cadastro e não coleta dados pessoais por formulário. As calculadoras funcionam no seu navegador: os valores que você digita não são enviados para nós.</p>
+<h2>Cookies e publicidade</h2>
+<p>Este site pode exibir anúncios do Google AdSense. O Google e seus parceiros usam cookies para mostrar anúncios com base nas suas visitas a este e a outros sites. Você pode desativar a publicidade personalizada em <a href="https://adssettings.google.com" rel="nofollow">Configurações de anúncios do Google</a>. Saiba mais em <a href="https://policies.google.com/technologies/ads?hl=pt-BR" rel="nofollow">como o Google usa cookies em publicidade</a>.</p>
+<h2>Estatísticas de acesso</h2>
+<p>Podemos usar o Google Analytics para contar visitas de forma agregada, sem identificar quem visita.</p>
+<h2>Seus direitos</h2>
+<p>Conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018), você pode pedir informações sobre o tratamento de dados escrevendo para <a href="mailto:{{ cfg.email_contato }}">{{ cfg.email_contato }}</a>.</p>
+{% endblock %}

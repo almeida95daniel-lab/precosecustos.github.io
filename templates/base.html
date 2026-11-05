@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}{{ cfg.nome_site }}{% endblock %}</title>
+<meta name="description" content="{% block descricao %}{{ cfg.descricao }}{% endblock %}">
+<link rel="canonical" href="{{ cfg.url_base.rstrip('/') }}{{ url }}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ cfg.nome_site }}">
+<meta property="og:title" content="{{ self.titulo() }}">
+<meta property="og:description" content="{{ self.descricao() }}">
+<meta property="og:url" content="{{ cfg.url_base.rstrip('/') }}{{ url }}">
+<meta name="theme-color" content="#17242C">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2317242C'/%3E%3Crect x='6' y='22' width='20' height='4' fill='%23F2B705'/%3E%3Ctext x='16' y='19' font-family='Arial' font-weight='700' font-size='15' fill='%23fff' text-anchor='middle'%3ER$%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/estilo.css">
+{% if cfg.adsense_cliente %}
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ cfg.adsense_cliente }}" crossorigin="anonymous"></script>
+{% endif %}
+{% if cfg.google_analytics %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ cfg.google_analytics }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ cfg.google_analytics }}');</script>
+{% endif %}
+{% block cabeca %}{% endblock %}
+</head>
+<body>
+<header class="topo">
+  <div class="topo-in">
+    <a class="marca" href="/">{{ cfg.nome_site }}</a>
+    <nav class="nav" aria-label="Seções">
+      {% set secoes = [("/combustivel/", "Combustível"), ("/combustivel/etanol-ou-gasolina/", "Etanol ou gasolina"), ("/dolar-hoje/", "Dólar"), ("/selic-hoje/", "Juros"), ("/ipca-inflacao/", "Inflação")] %}
+      {% if tem_energia %}{% set secoes = secoes + [("/conta-de-luz/", "Conta de luz")] %}{% endif %}
+      {% set secoes = secoes + [("/calculadoras/", "Calculadoras")] %}
+      {% for href, rotulo in secoes %}
+      <a href="{{ href }}"{% if url == href %} aria-current="page"{% endif %}>{{ rotulo }}</a>
+      {% endfor %}
+    </nav>
+  </div>
+</header>
+<main class="miolo">
+{% block conteudo %}{% endblock %}
+</main>
+<footer class="rodape">
+  <div class="rodape-in">
+    <p>Dados oficiais da <a href="https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos" rel="nofollow">ANP</a>, do <a href="https://www.bcb.gov.br/estatisticas" rel="nofollow">Banco Central</a>{% if tem_energia %} e da <a href="https://dadosabertos.aneel.gov.br" rel="nofollow">ANEEL</a>{% endif %}, atualizados automaticamente. Os preços são médias de pesquisa e podem variar de posto para posto.</p>
+    <div class="rodape-links">
+      <a href="/sobre/">Sobre e metodologia</a>
+      <a href="/privacidade/">Privacidade</a>
+      <a href="/calculadoras/">Calculadoras</a>
+      <span>© {{ ano }} {{ cfg.nome_site }}</span>
+    </div>
+  </div>
+</footer>
+{% if cidades_js %}<script type="application/json" id="cidades-dados">{{ cidades_js|json }}</script>{% endif %}
+<script src="/static/app.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

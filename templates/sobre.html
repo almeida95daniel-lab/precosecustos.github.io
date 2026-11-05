@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% block titulo %}Sobre o {{ cfg.nome_site }} e de onde vêm os dados{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), (None, "Sobre")]) }}
+<h1>Sobre o {{ cfg.nome_site }}</h1>
+<p class="lead">Um jeito rápido de saber quanto custa o dia a dia: combustível, câmbio, juros e inflação, com números oficiais e sem cadastro.</p>
+<h2>De onde vêm os dados</h2>
+<ul>
+  <li><strong>Combustíveis:</strong> Levantamento de Preços de Combustíveis da Agência Nacional do Petróleo (ANP), publicado toda semana. A ANP visita uma amostra de postos em cerca de 390 municípios. Mostramos as médias, os valores mínimo e máximo e os postos com menor preço na coleta.</li>
+  <li><strong>Câmbio, juros e inflação:</strong> Sistema Gerenciador de Séries Temporais do Banco Central (PTAX, Selic, CDI, IPCA, INPC, IGP-M e poupança).</li>
+  {% if tem_energia %}<li><strong>Energia:</strong> dados abertos da Agência Nacional de Energia Elétrica (ANEEL) sobre bandeiras tarifárias e tarifas homologadas.</li>{% endif %}
+</ul>
+<h2>Como o site é atualizado</h2>
+<p>Um programa busca os dados nas fontes oficiais todos os dias e reconstrói as páginas assim que há informação nova. Não alteramos os números; só fazemos contas a partir deles, como médias, variações e a comparação entre etanol e gasolina.</p>
+<h2>Limites</h2>
+<p>Os preços de combustível são de uma amostra e da data da coleta. Cada posto define o próprio preço, que pode mudar a qualquer momento. As calculadoras fazem simulações e não são recomendação financeira.</p>
+<h2>Contato</h2>
+<p>Encontrou algum erro? Escreva para <a href="mailto:{{ cfg.email_contato }}">{{ cfg.email_contato }}</a>.</p>
+{% endblock %}

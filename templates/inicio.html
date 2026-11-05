@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}{{ cfg.nome_site }}: preço da gasolina na sua cidade, dólar, juros e inflação hoje{% endblock %}
+{% block conteudo %}
+<h1>Quanto custa abastecer na sua cidade esta semana?</h1>
+{% if comb %}
+<p class="lead">Preços médios de {{ comb.cidades|length }} cidades, da pesquisa oficial da ANP de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}.</p>
+{{ m.busca() }}
+{{ m.placa(comb.brasil.produtos, rodape="Média do Brasil. Variação em relação à semana anterior.", ordem=["gasolina", "etanol", "diesel_s10", "glp"]) }}
+<p><a href="/combustivel/">Ver todos os estados e cidades</a> ou <a href="/combustivel/etanol-ou-gasolina/">descobrir se o etanol compensa</a>.</p>
+{% else %}
+<p class="lead">Os dados de combustível aparecem aqui assim que o robô concluir a primeira coleta da ANP.</p>
+{% endif %}
+
+{% if bcb %}
+<h2>Dinheiro hoje</h2>
+<div class="indices">
+  {% if bcb.dolar %}<a class="indice" href="/dolar-hoje/"><span class="indice-nome">Dólar</span><span class="indice-valor">{{ bcb.dolar.valor|brl(4) }}</span><span class="meta">{{ bcb.dolar.var|seta }} em {{ bcb.dolar.data|data_br }}</span></a>{% endif %}
+  {% if bcb.euro %}<a class="indice" href="/euro-hoje/"><span class="indice-nome">Euro</span><span class="indice-valor">{{ bcb.euro.valor|brl(4) }}</span><span class="meta">{{ bcb.euro.var|seta }} em {{ bcb.euro.data|data_br }}</span></a>{% endif %}
+  {% if bcb.selic.valor is not none %}<a class="indice" href="/selic-hoje/"><span class="indice-nome">Selic</span><span class="indice-valor">{{ bcb.selic.valor|num(2) }}% ao ano</span><span class="meta">meta do Copom</span></a>{% endif %}
+  {% if bcb.ipca12.valor is not none %}<a class="indice" href="/ipca-inflacao/"><span class="indice-nome">Inflação em 12 meses</span><span class="indice-valor">{{ bcb.ipca12.valor|num(2) }}%</span><span class="meta">IPCA até {{ bcb.ipca12.data|data_br("mes") }}</span></a>{% endif %}
+  {% if bcb.cdi.valor is not none %}<a class="indice" href="/cdi-hoje/"><span class="indice-nome">CDI</span><span class="indice-valor">{{ bcb.cdi.valor|num(2) }}% ao ano</span><span class="meta">referência dos investimentos</span></a>{% endif %}
+  {% if bcb.poupanca.valor is not none %}<a class="indice" href="/calculadoras/rendimento/"><span class="indice-nome">Poupança</span><span class="indice-valor">{{ bcb.poupanca.valor|num(4) }}% ao mês</span><span class="meta">compare com CDB e Tesouro</span></a>{% endif %}
+</div>
+{% endif %}
+
+<h2>Calculadoras</h2>
+<ul>
+  {% if comb %}<li><a href="/combustivel/etanol-ou-gasolina/">Etanol ou gasolina</a>: descubra qual sai mais barato para o seu carro.</li>
+  <li><a href="/calculadoras/custo-da-viagem/">Custo da viagem</a>: quanto vai gastar de combustível com o preço da sua cidade.</li>{% endif %}
+  {% if bcb %}<li><a href="/calculadoras/rendimento/">Poupança, CDB ou Tesouro</a>: quanto rende o seu dinheiro em cada um, já com imposto.</li>
+  <li><a href="/calculadoras/corrigir-pela-inflacao/">Corrigir valor pela inflação</a>: quanto um valor antigo vale hoje.</li>{% endif %}
+  {% if tem_energia %}<li><a href="/conta-de-luz/">Conta de luz</a>: quanto custa cada aparelho por mês na sua distribuidora.</li>{% endif %}
+</ul>
+{% endblock %}

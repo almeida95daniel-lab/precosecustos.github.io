@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% set g = c.produtos.get("gasolina") %}
+{% set e = c.produtos.get("etanol") %}
+{% set eg = est.produtos.get("gasolina") %}
+{% block titulo %}Preço da gasolina em {{ c.nome }} ({{ c.uf }}) hoje{% if g %}: {{ g.medio|brl }}{% endif %} | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Preço médio da gasolina{% if g %} ({{ g.medio|brl }}){% endif %}, etanol{% if e %} ({{ e.medio|brl }}){% endif %} e diesel em {{ c.nome }}, {{ c.estado }}: postos mais baratos, histórico e se o etanol compensa. Pesquisa ANP de {{ comb.fim|data_br }}.{% endblock %}
+{% block conteudo %}
+{{ m.trilha([("/", "Início"), ("/combustivel/", "Combustível"), (est.url, est.nome), (None, c.nome)]) }}
+<h1>Preço dos combustíveis em {{ c.nome }} ({{ c.uf }})</h1>
+<p class="lead">Médias da pesquisa semanal da ANP em {{ c.nome }}, de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}.</p>
+
+{{ m.placa(c.produtos, rodape="Variação em relação à semana anterior.") }}
+
+{{ m.veredito_etanol(c.razao, "em " ~ c.nome) }}
+
+<h2>Resumo da semana</h2>
+{% if g %}
+<p>O litro da gasolina comum em {{ c.nome }} saiu em média por <strong>{{ g.medio|brl }}</strong>{% if g.postos %} nos {{ g.postos }} postos pesquisados{% endif %}.
+{% if g.minimo and g.maximo and g.maximo > g.minimo %}O preço mais baixo encontrado foi {{ g.minimo|brl }} e o mais alto, {{ g.maximo|brl }} — uma diferença de {{ (g.maximo - g.minimo)|brl }} por litro, ou {{ ((g.maximo - g.minimo)*40)|brl }} num tanque de 40 litros.{% endif %}{{ ' ' }}
+{% if eg %}
+{% set dif = (g.medio / eg.medio - 1) * 100 %}
+{% if dif|abs < 0.5 %}O valor está praticamente igual à média de {{ est.nome }} ({{ eg.medio|brl }}).{% elif dif < 0 %}É {{ (-dif)|num(1) }}% mais barato que a média de {{ est.nome }} ({{ eg.medio|brl }}).{% else %}É {{ dif|num(1) }}% mais caro que a média de {{ est.nome }} ({{ eg.medio|brl }}).{% endif %}{{ ' ' }}
+{% endif %}
+{% if c.pos_estado %}Entre as {{ c.total_estado }} cidades pesquisadas no estado, {{ c.nome }} tem a {{ c.pos_estado }}ª gasolina mais barata.{% endif %}</p>
+{% endif %}
+
+<div class="tabela-rolagem">
+<table>
+  <thead><tr><th>Combustível</th><th class="n">Médio</th><th class="n">Mínimo</th><th class="n">Máximo</th><th class="n">Postos</th><th>Semana anterior</th></tr></thead>
+  <tbody>
+  {% for chave, info in PRODUTOS.items() if chave in c.produtos %}
+  {% set d = c.produtos[chave] %}
+  <tr><td>{{ info.nome }}</td><td class="n">{{ d.medio|brl }}</td><td class="n">{{ d.minimo|brl }}</td><td class="n">{{ d.maximo|brl }}</td><td class="n">{{ d.postos or "–" }}</td><td>{{ d.var|seta }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% set lista = c.postos.get("gasolina") %}
+{% if lista and lista.postos %}
+<h2>Postos com a gasolina mais barata em {{ c.nome }}</h2>
+<p class="nota">Preços coletados pela ANP entre {{ comb.inicio|data_br }} e {{ comb.fim|data_br }} em {{ lista.total }} postos. Confirme na bomba: o preço pode ter mudado desde a coleta.</p>
+<div class="tabela-rolagem">
+<table>
+  <thead><tr><th>Posto</th><th>Endereço</th><th class="n">Gasolina</th><th class="n">Coleta</th></tr></thead>
+  <tbody>
+  {% for p in lista.postos %}
+  <tr><td>{{ p.nome }}{% if p.bandeira and p.bandeira|lower not in ("branca", "bandeira branca") %}<br><span class="meta">{{ p.bandeira }}</span>{% endif %}</td><td>{{ p.endereco }}{% if p.bairro %}<br><span class="meta">{{ p.bairro }}</span>{% endif %}</td><td class="n">{{ p.preco|brl(2 if ((p.preco*1000)|round|int) % 10 == 0 else 3) }}</td><td class="n">{{ p.coleta }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% set le = c.postos.get("etanol") %}
+{% if le and le.postos %}
+<h3>Etanol mais barato</h3>
+<div class="tabela-rolagem">
+<table>
+  <thead><tr><th>Posto</th><th>Endereço</th><th class="n">Etanol</th></tr></thead>
+  <tbody>
+  {% for p in le.postos[:5] %}
+  <tr><td>{{ p.nome }}</td><td>{{ p.endereco }}{% if p.bairro %}<br><span class="meta">{{ p.bairro }}</span>{% endif %}</td><td class="n">{{ p.preco|brl(2 if ((p.preco*1000)|round|int) % 10 == 0 else 3) }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endif %}
+
+{% set hist = serie_semanal(c.serie, "gasolina") %}
+{% if hist|length > 1 %}
+<h2>Histórico do preço da gasolina em {{ c.nome }}</h2>
+{{ grafico(hist, titulo="Gasolina comum, preço médio por litro, semana a semana") }}
+{% set he = serie_semanal(c.serie, "etanol") %}
+{% if he|length > 1 %}{{ grafico(he, titulo="Etanol, preço médio por litro, semana a semana") }}{% endif %}
+{% endif %}
+
+<h2>Quanto custa abastecer em {{ c.nome }}</h2>
+<div class="tabela-rolagem">
+<table>
+  <thead><tr><th>Tanque</th>{% for k in ("gasolina", "etanol", "diesel_s10") if k in c.produtos %}<th class="n">{{ PRODUTOS[k].nome }}</th>{% endfor %}</tr></thead>
+  <tbody>
+  {% for litros in (10, 40, 50, 60) %}
+  <tr><td>{{ litros }} litros</td>{% for k in ("gasolina", "etanol", "diesel_s10") if k in c.produtos %}<td class="n">{{ (c.produtos[k].medio * litros)|brl }}</td>{% endfor %}</tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="nota">Quer o custo de uma viagem? Use a <a href="/calculadoras/custo-da-viagem/">calculadora de custo da viagem</a>.</p>
+
+{% if vizinhas %}
+<h2>Gasolina mais barata em {{ est.nome }}</h2>
+<div class="tabela-rolagem">
+<table>
+  <thead><tr><th>Cidade</th><th class="n">Gasolina</th><th class="n">Etanol</th></tr></thead>
+  <tbody>
+  {% for o in vizinhas %}
+  <tr><td><a href="{{ o.url }}">{{ o.nome }}</a></td><td class="n">{{ o.produtos.gasolina.medio|brl }}</td><td class="n">{{ o.produtos.etanol.medio|brl if o.produtos.etanol else "–" }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p><a href="{{ est.url }}">Ver todas as cidades de {{ est.nome }}</a></p>
+{% endif %}
+
+{% set perguntas = [] %}
+{% if g %}{% set perguntas = perguntas + [("Quanto está a gasolina em " ~ c.nome ~ " hoje?", "Na pesquisa mais recente da ANP (" ~ comb.inicio|data_br ~ " a " ~ comb.fim|data_br ~ "), o litro da gasolina comum em " ~ c.nome ~ " custou em média " ~ g.medio|brl ~ (", variando de " ~ g.minimo|brl ~ " a " ~ g.maximo|brl if g.minimo and g.maximo else "") ~ ".")] %}{% endif %}
+{% if c.razao %}{% set perguntas = perguntas + [("Etanol ou gasolina: qual compensa em " ~ c.nome ~ "?", ("O etanol" if c.razao <= regra else "A gasolina") ~ " compensa: o etanol está custando " ~ (c.razao*100)|num(1) ~ "% do preço da gasolina. A referência usada é " ~ (regra*100)|num(0) ~ "%; abaixo dela, o etanol costuma sair mais barato por quilômetro.")] %}{% endif %}
+{% set perguntas = perguntas + [("Com que frequência os preços são atualizados?", "Toda semana. A ANP coleta os preços nos postos e publica o levantamento; este site baixa os dados automaticamente assim que saem."), ("Por que o preço do meu posto é diferente?", "Os valores são médias de uma amostra de postos. Cada posto define o próprio preço, que também pode mudar durante a semana ou conforme a forma de pagamento.")] %}
+{{ m.faq(perguntas) }}
+{% endblock %}

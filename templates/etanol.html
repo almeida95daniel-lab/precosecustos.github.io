@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% set lista = comb.cidades|selectattr("razao")|sort(attribute="razao")|list %}
+{% set compensa = lista|selectattr("razao", "le", regra)|list %}
+{% block titulo %}Etanol ou gasolina: qual compensa na sua cidade hoje? | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Calculadora etanol ou gasolina e a lista das {{ lista|length }} cidades pesquisadas pela ANP. Nesta semana o etanol compensa em {{ compensa|length }} delas.{% endblock %}
+{% block conteudo %}
+{{ m.trilha([("/", "Início"), ("/combustivel/", "Combustível"), (None, "Etanol ou gasolina")]) }}
+<h1>Etanol ou gasolina: qual compensa?</h1>
+<p class="lead">O etanol rende menos por litro. Por isso ele só vale a pena quando custa até cerca de {{ (regra*100)|num(0) }}% do preço da gasolina. Faça a conta com os preços do seu posto ou veja o resultado da sua cidade.</p>
+
+<section class="calc" aria-labelledby="calc-titulo">
+  <h2 id="calc-titulo" style="margin-top:0">Faça a conta</h2>
+  <div class="campos">
+    <div class="campo"><label for="pg">Preço da gasolina (R$)</label><input id="pg" type="number" step="0.01" min="0" inputmode="decimal" value="{{ comb.brasil.produtos.gasolina.medio|round(2) if comb.brasil.produtos.gasolina else '' }}"></div>
+    <div class="campo"><label for="pe">Preço do etanol (R$)</label><input id="pe" type="number" step="0.01" min="0" inputmode="decimal" value="{{ comb.brasil.produtos.etanol.medio|round(2) if comb.brasil.produtos.etanol else '' }}"></div>
+    <div class="campo"><label for="cg">Seu carro faz com gasolina (km/l)</label><input id="cg" type="number" step="0.1" min="0" inputmode="decimal" placeholder="opcional"><p class="ajuda">Se souber, a conta fica exata para o seu carro.</p></div>
+    <div class="campo"><label for="ce">E com etanol (km/l)</label><input id="ce" type="number" step="0.1" min="0" inputmode="decimal" placeholder="opcional"></div>
+  </div>
+  <div class="resultado" aria-live="polite"><div class="resultado-grande" id="res-titulo"></div><p id="res-texto" class="nota"></p></div>
+</section>
+
+<h2>Onde o etanol compensa nesta semana</h2>
+<p>Das {{ lista|length }} cidades com preço de etanol e gasolina na pesquisa de {{ comb.fim|data_br }}, o etanol está abaixo de {{ (regra*100)|num(0) }}% do preço da gasolina em <strong>{{ compensa|length }}</strong>.</p>
+<label for="filtro-uf" class="so-leitor">Filtrar por estado</label>
+<select id="filtro-uf" style="max-width:280px">
+  <option value="">Todos os estados</option>
+  {% for uf, e in comb.estados.items() %}<option value="{{ uf }}">{{ e.nome }}</option>{% endfor %}
+</select>
+<div class="tabela-rolagem">
+<table id="tabela-razao">
+  <thead><tr><th>Cidade</th><th class="n">Etanol</th><th class="n">Gasolina</th><th class="n">Etanol ÷ gasolina</th><th>Compensa</th></tr></thead>
+  <tbody>
+  {% for c in lista %}
+  <tr data-uf="{{ c.uf }}"><td><a href="{{ c.url }}">{{ c.nome }} ({{ c.uf }})</a></td><td class="n">{{ c.produtos.etanol.medio|brl }}</td><td class="n">{{ c.produtos.gasolina.medio|brl }}</td><td class="n">{{ (c.razao*100)|num(1) }}%</td><td>{{ "Etanol" if c.razao <= regra else "Gasolina" }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{{ m.faq([
+  ("De onde vem a regra dos 70%?", "Em média, um carro flex roda cerca de 30% menos com um litro de etanol do que com um de gasolina. Se o etanol custar até 70% do preço da gasolina, o custo por quilômetro fica igual ou menor. Carros mais novos podem ter uma relação um pouco diferente; se souber o consumo do seu, preencha os campos de km/l na calculadora."),
+  ("O etanol estraga o motor?", "Não. Carros flex são projetados para usar qualquer proporção dos dois combustíveis."),
+  ("Os preços da tabela são atualizados?", "Sim, toda semana, com a pesquisa oficial da ANP. A última é de " ~ comb.inicio|data_br ~ " a " ~ comb.fim|data_br ~ ".")
+]) }}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var regra = {{ regra }};
+  var $ = function (id) { return document.getElementById(id); };
+  function calc() {
+    var g = BH.ler($("pg")), e = BH.ler($("pe")), kg = BH.ler($("cg")), ke = BH.ler($("ce"));
+    var t = $("res-titulo"), x = $("res-texto");
+    if (!(g > 0 && e > 0)) { t.textContent = ""; x.textContent = "Informe os dois preços para ver o resultado."; return; }
+    if (kg > 0 && ke > 0) {
+      var cg = g / kg, ce = e / ke;
+      t.textContent = ce < cg ? "Etanol compensa" : (ce > cg ? "Gasolina compensa" : "Tanto faz");
+      x.textContent = "Com gasolina você gasta " + BH.brl(cg, 3) + " por km; com etanol, " + BH.brl(ce, 3) + " por km. Em 1.000 km a diferença é de " + BH.brl(Math.abs(cg - ce) * 1000) + ".";
+    } else {
+      var r = e / g;
+      t.textContent = r <= regra ? "Etanol compensa" : "Gasolina compensa";
+      x.textContent = "O etanol custa " + BH.num(r * 100, 1) + "% do preço da gasolina. O limite para compensar é " + BH.num(regra * 100, 0) + "%: o etanol valeria a pena até " + BH.brl(g * regra) + ".";
+    }
+  }
+  ["pg", "pe", "cg", "ce"].forEach(function (id) { $(id).addEventListener("input", calc); });
+  calc();
+  $("filtro-uf").addEventListener("change", function () {
+    var uf = this.value;
+    document.querySelectorAll("#tabela-razao tbody tr").forEach(function (tr) { tr.hidden = uf && tr.dataset.uf !== uf; });
+  });
+})();
+</script>
+{% endblock %}

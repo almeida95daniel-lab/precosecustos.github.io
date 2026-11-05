@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% set g = est.produtos.get("gasolina") %}
+{% block titulo %}Preço da gasolina em {{ est.nome }} hoje, cidade por cidade | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Gasolina{% if g %} a {{ g.medio|brl }} em média{% endif %}, etanol e diesel em {{ est.nome }}: ranking das {{ est.cidades|length }} cidades pesquisadas pela ANP, da mais barata à mais cara.{% endblock %}
+{% block conteudo %}
+{{ m.trilha([("/", "Início"), ("/combustivel/", "Combustível"), (None, est.nome)]) }}
+<h1>Preço dos combustíveis em {{ est.nome }}</h1>
+<p class="lead">Média estadual e {{ est.cidades|length }} cidades pesquisadas pela ANP na semana de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}.</p>
+{% if est.produtos %}{{ m.placa(est.produtos, rodape="Média de " ~ est.nome ~ ". Variação em relação à semana anterior.") }}{% endif %}
+{{ m.veredito_etanol(est.razao, "na média de " ~ est.nome) }}
+
+{% set com_g = est.cidades|selectattr("produtos.gasolina", "defined")|sort(attribute="produtos.gasolina.medio")|list %}
+{% if com_g %}
+<h2>Cidades de {{ est.nome }}, da gasolina mais barata à mais cara</h2>
+{% set maior = com_g[-1].produtos.gasolina.medio %}
+{% set menor = com_g[0].produtos.gasolina.medio %}
+<div class="tabela-rolagem">
+<table>
+  <thead><tr><th>Cidade</th><th class="n">Gasolina</th><th class="n">Etanol</th><th class="n">Diesel S10</th><th>Compensa</th></tr></thead>
+  <tbody>
+  {% for c in com_g %}
+  {% set gv = c.produtos.gasolina.medio %}
+  <tr>
+    <td><a href="{{ c.url }}">{{ c.nome }}</a></td>
+    <td class="n"><span class="barra-cel"><span class="barra" style="width:{{ (8 + 52 * ((gv - menor) / ((maior - menor) or 1)))|round(1) }}px" aria-hidden="true"></span>{{ gv|brl }}</span></td>
+    <td class="n">{{ c.produtos.etanol.medio|brl if c.produtos.etanol else "–" }}</td>
+    <td class="n">{{ c.produtos.diesel_s10.medio|brl if c.produtos.diesel_s10 else "–" }}</td>
+    <td>{% if c.razao %}{{ "Etanol" if c.razao <= regra else "Gasolina" }}{% else %}–{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+
+{% set hist = serie_semanal(est.serie, "gasolina") %}
+{% if hist|length > 1 %}
+<h2>Evolução da gasolina em {{ est.nome }}</h2>
+{{ grafico(hist, titulo="Gasolina comum, média estadual por litro") }}
+{% endif %}
+
+{{ m.faq([
+  ("Qual a cidade com a gasolina mais barata de " ~ est.nome ~ "?", (com_g[0].nome ~ ", com média de " ~ com_g[0].produtos.gasolina.medio|brl ~ " por litro na pesquisa da ANP de " ~ comb.fim|data_br ~ ".") if com_g else "Não houve pesquisa de gasolina no estado nesta semana."),
+  ("Por que minha cidade não aparece?", "A ANP pesquisa preços em cerca de 390 municípios do país. Se a sua cidade não está na amostra, use a média do estado ou a de uma cidade próxima como referência.")
+]) }}
+{% endblock %}

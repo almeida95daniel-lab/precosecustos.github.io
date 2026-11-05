@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% set g = comb.brasil.produtos.get("gasolina") %}
+{% block titulo %}Preço da gasolina hoje no Brasil, por estado e cidade | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Gasolina a {{ g.medio|brl if g else "–" }} na média nacional. Veja o preço da gasolina, etanol, diesel, GNV e gás de cozinha em cada estado e em {{ comb.cidades|length }} cidades, com dados da ANP.{% endblock %}
+{% block conteudo %}
+{{ m.trilha([("/", "Início"), (None, "Combustível")]) }}
+<h1>Preço dos combustíveis no Brasil</h1>
+<p class="lead">Média nacional da pesquisa da ANP de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}. Procure sua cidade para ver os postos mais baratos.</p>
+{{ m.busca() }}
+{{ m.placa(comb.brasil.produtos, rodape="Média do Brasil. Variação em relação à semana anterior.") }}
+
+{% set ests = comb.estados.values()|selectattr("produtos.gasolina", "defined")|sort(attribute="produtos.gasolina.medio")|list %}
+<h2>Preço por estado</h2>
+<div class="tabela-rolagem">
+<table>
+  <thead><tr><th>Estado</th><th class="n">Gasolina</th><th class="n">Etanol</th><th class="n">Diesel S10</th><th class="n">Gás 13 kg</th><th>Compensa</th></tr></thead>
+  <tbody>
+  {% for e in ests %}
+  <tr>
+    <td><a href="{{ e.url }}">{{ e.nome }}</a></td>
+    <td class="n">{{ e.produtos.gasolina.medio|brl }}</td>
+    <td class="n">{{ e.produtos.etanol.medio|brl if e.produtos.etanol else "–" }}</td>
+    <td class="n">{{ e.produtos.diesel_s10.medio|brl if e.produtos.diesel_s10 else "–" }}</td>
+    <td class="n">{{ e.produtos.glp.medio|brl if e.produtos.glp else "–" }}</td>
+    <td>{% if e.razao %}{{ "Etanol" if e.razao <= regra else "Gasolina" }}{% else %}–{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% set cg = comb.cidades|selectattr("produtos.gasolina", "defined")|sort(attribute="produtos.gasolina.medio")|list %}
+{% if cg %}
+<h2>As 15 cidades com a gasolina mais barata</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Cidade</th><th class="n">Gasolina</th></tr></thead>
+  <tbody>{% for c in cg[:15] %}<tr><td><a href="{{ c.url }}">{{ c.nome }} ({{ c.uf }})</a></td><td class="n">{{ c.produtos.gasolina.medio|brl }}</td></tr>{% endfor %}</tbody>
+</table></div>
+<h2>As 15 cidades com a gasolina mais cara</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Cidade</th><th class="n">Gasolina</th></tr></thead>
+  <tbody>{% for c in cg[-15:]|reverse %}<tr><td><a href="{{ c.url }}">{{ c.nome }} ({{ c.uf }})</a></td><td class="n">{{ c.produtos.gasolina.medio|brl }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+
+{% set hist = serie_semanal(comb.brasil.serie, "gasolina") %}
+{% if hist|length > 1 %}
+<h2>Evolução da gasolina no Brasil</h2>
+{{ grafico(hist, titulo="Gasolina comum, média nacional por litro") }}
+{% set hd = serie_semanal(comb.brasil.serie, "diesel_s10") %}
+{% if hd|length > 1 %}{{ grafico(hd, titulo="Diesel S10, média nacional por litro") }}{% endif %}
+{% endif %}
+
+<h2>Todas as cidades pesquisadas</h2>
+{% for uf, e in comb.estados.items() %}
+<h3><a href="{{ e.url }}">{{ e.nome }}</a></h3>
+<ul class="lista-links">{% for c in e.cidades %}<li><a href="{{ c.url }}">{{ c.nome }}</a>{% if c.produtos.gasolina %}<span class="meta">{{ c.produtos.gasolina.medio|brl }}</span>{% endif %}</li>{% endfor %}</ul>
+{% endfor %}
+{% endblock %}

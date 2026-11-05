@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% block titulo %}Calculadoras do dia a dia: combustível, investimentos e inflação | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Calculadoras gratuitas com dados oficiais atualizados: etanol ou gasolina, custo da viagem, rendimento da poupança e CDB, correção pela inflação e conta de luz.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), (None, "Calculadoras")]) }}
+<h1>Calculadoras</h1>
+<p class="lead">Todas usam os números oficiais mais recentes, que este site atualiza sozinho.</p>
+<h2>Carro e combustível</h2>
+<ul>
+  {% if comb %}<li><a href="/combustivel/etanol-ou-gasolina/">Etanol ou gasolina</a>: qual sai mais barato por quilômetro.</li>
+  <li><a href="/calculadoras/custo-da-viagem/">Custo da viagem</a>: combustível da viagem com o preço da sua cidade, dividido por pessoa.</li>{% endif %}
+</ul>
+<h2>Dinheiro</h2>
+<ul>
+  {% if bcb %}<li><a href="/calculadoras/rendimento/">Poupança, CDB, LCI ou Tesouro</a>: quanto rende cada um, já com imposto.</li>
+  <li><a href="/calculadoras/corrigir-pela-inflacao/">Corrigir valor pela inflação</a>: IPCA, INPC ou IGP-M.</li>
+  {% if bcb.dolar %}<li><a href="/dolar-hoje/">Conversor de dólar</a> e <a href="/euro-hoje/">de euro</a>, com a taxa do cartão.</li>{% endif %}{% endif %}
+</ul>
+{% if tem_energia %}
+<h2>Casa</h2>
+<ul><li><a href="/conta-de-luz/">Conta de luz</a>: quanto cada aparelho custa por mês na sua distribuidora.</li></ul>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% if ind == "selic" %}
+  {% set nome, valor, unidade, data = "Selic", bcb.selic.valor, "% ao ano", bcb.selic.data %}
+{% elif ind == "cdi" %}
+  {% set nome, valor, unidade, data = "CDI", bcb.cdi.valor, "% ao ano", bcb.cdi.data %}
+{% else %}
+  {% set nome, valor, unidade, data = "IPCA", bcb.ipca12.valor, "% em 12 meses", bcb.ipca12.data %}
+{% endif %}
+{% block titulo %}{% if ind == "ipca" %}Inflação hoje: IPCA de {{ valor|num(2) }}% em 12 meses{% else %}{{ nome }} hoje: {{ valor|num(2) }}% ao ano{% endif %} | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}{% if ind == "ipca" %}IPCA acumulado em 12 meses, inflação do mês e do ano, com gráfico e calculadora de correção de valores.{% else %}Taxa {{ nome }} atual ({{ valor|num(2) }}% ao ano), histórico e o que ela muda nos seus investimentos e empréstimos.{% endif %} Dados do Banco Central.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), (None, nome)]) }}
+{% if ind == "selic" %}
+<h1>Taxa Selic hoje</h1>
+<p class="lead">A Selic é a taxa básica de juros da economia, definida pelo Copom a cada 45 dias. Ela puxa os juros dos empréstimos e o rendimento da renda fixa.</p>
+{% elif ind == "cdi" %}
+<h1>CDI hoje</h1>
+<p class="lead">O CDI é a taxa que os bancos usam para emprestar entre si. Quase todo CDB, LCI e LCA rende um percentual dele, e ele anda colado na Selic.</p>
+{% else %}
+<h1>Inflação hoje (IPCA)</h1>
+<p class="lead">O IPCA é o índice oficial de inflação do Brasil, medido pelo IBGE. Ele mostra quanto subiram, em média, os preços que as famílias pagam.</p>
+{% endif %}
+
+<div class="placa">
+  <div class="placa-linha">
+    <span class="placa-nome">{{ nome }}</span>
+    <span class="placa-preco">{{ valor|num(2) }}<small style="vertical-align:baseline;margin-left:4px">%</small></span>
+    <span class="placa-sub">{{ unidade }}, dado de {{ data|data_br }}</span>
+  </div>
+  {% if ind == "ipca" and bcb.ipca_mes %}
+  <div class="placa-linha">
+    <span class="placa-nome">No mês</span>
+    <span class="placa-preco">{{ bcb.ipca_mes.valor|num(2) }}<small style="vertical-align:baseline;margin-left:4px">%</small></span>
+    <span class="placa-sub">{{ bcb.ipca_mes.data|data_br("mes") }}</span>
+  </div>
+  <div class="placa-linha">
+    <span class="placa-nome">No ano</span>
+    <span class="placa-preco">{{ bcb.ipca_ano|num(2) }}<small style="vertical-align:baseline;margin-left:4px">%</small></span>
+    <span class="placa-sub">acumulado em {{ bcb.ipca_mes.data[:4] }}</span>
+  </div>
+  {% endif %}
+</div>
+
+{% if ind == "selic" and bcb.selic.grafico %}
+<h2>Selic nos últimos três anos</h2>
+{{ grafico(bcb.selic.grafico, fmt="pct", titulo="Meta da Selic, % ao ano, fim de cada mês", degrau=True) }}
+{% elif ind == "cdi" and bcb.cdi.grafico %}
+<h2>CDI nos últimos dois anos</h2>
+{{ grafico(bcb.cdi.grafico, fmt="pct", titulo="CDI anualizado, % ao ano, fim de cada mês") }}
+{% elif ind == "ipca" and bcb.ipca12.grafico %}
+<h2>Inflação em 12 meses</h2>
+{{ grafico(bcb.ipca12.grafico, fmt="pct", titulo="IPCA acumulado em 12 meses, %") }}
+{% endif %}
+
+<h2>O que isso muda no seu bolso</h2>
+{% if ind in ("selic", "cdi") %}
+<p>Com o CDI em {{ bcb.cdi.valor|num(2) }}% ao ano, R$ 10.000 aplicados num CDB que paga 100% do CDI rendem cerca de {{ (10000 * (bcb.cdi.valor/100) * 0.825)|brl }} em um ano, já descontado o imposto de renda de 17,5%. Na poupança, o mesmo valor rende perto de {{ (10000 * ((1 + bcb.poupanca.valor/100)**12 - 1))|brl if bcb.poupanca.valor else "–" }}, sem imposto.</p>
+<p><a class="botao" href="/calculadoras/rendimento/">Comparar poupança, CDB e Tesouro</a></p>
+{% else %}
+<p>Com inflação de {{ valor|num(2) }}% em 12 meses, o que custava R$ 100,00 há um ano custa hoje, em média, {{ (100 * (1 + valor/100))|brl }}. Um investimento só ganhou poder de compra se rendeu mais do que isso, depois do imposto.</p>
+<p><a class="botao" href="/calculadoras/corrigir-pela-inflacao/">Corrigir um valor pela inflação</a></p>
+{% endif %}
+
+{% if ind == "selic" %}
+{{ mc.faq([
+  ("Quem define a Selic?", "O Comitê de Política Monetária (Copom) do Banco Central, em reuniões a cada 45 dias aproximadamente."),
+  ("Selic alta é bom ou ruim?", "Para quem investe em renda fixa, aumenta o rendimento. Para quem toma crédito, encarece os juros. O Banco Central sobe a Selic para frear a inflação e corta para estimular a economia."),
+  ("A poupança acompanha a Selic?", "Em parte. Quando a Selic está acima de 8,5% ao ano, a poupança rende 0,5% ao mês mais a TR. Abaixo disso, rende 70% da Selic mais a TR.")
+]) }}
+{% elif ind == "cdi" %}
+{{ mc.faq([
+  ("Qual a diferença entre CDI e Selic?", "A Selic é a meta definida pelo Banco Central; o CDI é a taxa efetivamente praticada entre os bancos, normalmente 0,10 ponto abaixo da meta."),
+  ("O que significa um CDB que paga 110% do CDI?", "Que ele rende 10% a mais que o CDI. Com o CDI a " ~ bcb.cdi.valor|num(2) ~ "% ao ano, 110% do CDI equivale a " ~ (bcb.cdi.valor*1.1)|num(2) ~ "% ao ano, antes do imposto.")
+]) }}
+{% else %}
+{{ mc.faq([
+  ("Qual a diferença entre IPCA e INPC?", "O IPCA mede a inflação para famílias com renda de 1 a 40 salários mínimos; o INPC, de 1 a 5 salários. O INPC é usado para reajustar o salário mínimo e benefícios do INSS."),
+  ("Quando sai o IPCA?", "O IBGE divulga o IPCA do mês anterior por volta do dia 10 de cada mês. Este site atualiza o número automaticamente.")
+]) }}
+{% endif %}
+{% endblock %}

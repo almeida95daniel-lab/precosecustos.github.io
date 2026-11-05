@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% set ult = bcb.series.ipca[-1][0] %}
+{% block titulo %}Corrigir valor pela inflação (IPCA, INPC e IGP-M) | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Calculadora de correção monetária: descubra quanto um valor antigo vale hoje pelo IPCA, INPC ou IGP-M, com dados do Banco Central até {{ ult|data_br("mes") }}.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), ("/calculadoras/", "Calculadoras"), (None, "Corrigir pela inflação")]) }}
+<h1>Quanto vale hoje um valor do passado?</h1>
+<p class="lead">Corrija aluguel, salário, dívida ou qualquer valor pela inflação oficial. Índices mensais do Banco Central, desde 1995.</p>
+
+<section class="calc">
+  <div class="campos">
+    <div class="campo"><label for="valor">Valor original (R$)</label><input id="valor" type="number" min="0" step="0.01" value="1000" inputmode="decimal"></div>
+    <div class="campo"><label for="indice">Índice</label><select id="indice"><option value="ipca">IPCA (inflação oficial)</option><option value="inpc">INPC (salários e INSS)</option><option value="igpm">IGP-M (aluguel)</option></select></div>
+    <div class="campo"><label for="ini">Mês inicial</label><input id="ini" type="month" min="1995-01"></div>
+    <div class="campo"><label for="fim">Mês final</label><input id="fim" type="month" min="1995-01"></div>
+  </div>
+  <div class="resultado" aria-live="polite">
+    <div class="resultado-grande" id="res"></div>
+    <p class="nota" id="det"></p>
+  </div>
+</section>
+<p class="nota">A conta acumula a variação do índice do mês inicial até o mês final, inclusive os dois. É o mesmo método da Calculadora do Cidadão do Banco Central.</p>
+
+{{ mc.faq([
+  ("Qual índice usar para corrigir aluguel?", "Depende do contrato. Por tradição, muitos usam o IGP-M; contratos mais recentes costumam usar o IPCA."),
+  ("Qual índice corrige salário e aposentadoria?", "O INPC é a referência para o salário mínimo e para os benefícios do INSS acima do mínimo.")
+]) }}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var S = {
+    ipca: {{ bcb.series.ipca|json }},
+    inpc: {{ (bcb.series.inpc or [])|json }},
+    igpm: {{ (bcb.series.igpm or [])|json }}
+  };
+  var $ = function (id) { return document.getElementById(id); };
+  var ult = S.ipca[S.ipca.length - 1][0].slice(0, 7);
+  $("fim").value = ult; $("fim").max = ult; $("ini").max = ult;
+  var d = new Date(ult + "-01"); d.setFullYear(d.getFullYear() - 5);
+  $("ini").value = d.toISOString().slice(0, 7);
+  function nomeMes(m) { var p = m.split("-"); return ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"][+p[1] - 1] + "/" + p[0]; }
+  function calc() {
+    var v = BH.ler($("valor")), s = S[$("indice").value], a = $("ini").value, b = $("fim").value;
+    if (!(v >= 0) || !a || !b) return;
+    if (a > b) { var t = a; a = b; b = t; }
+    var f = 1, n = 0;
+    s.forEach(function (p) { var m = p[0].slice(0, 7); if (m >= a && m <= b) { f *= 1 + p[1] / 100; n++; } });
+    if (!n) { $("res").textContent = ""; $("det").textContent = "Não há dados desse índice para o período escolhido. O último mês disponível é " + nomeMes(s[s.length - 1][0].slice(0, 7)) + "."; return; }
+    $("res").textContent = BH.brl(v * f);
+    $("det").textContent = BH.brl(v) + " de " + nomeMes(a) + " equivalem a " + BH.brl(v * f) + " em " + nomeMes(b) + ". Inflação acumulada: " + BH.num((f - 1) * 100) + "% em " + n + (n === 1 ? " mês." : " meses.");
+  }
+  ["valor", "indice", "ini", "fim"].forEach(function (id) { $(id).addEventListener("input", calc); });
+  calc();
+})();
+</script>
+{% endblock %}

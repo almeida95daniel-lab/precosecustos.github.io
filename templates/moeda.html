@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% block titulo %}{{ nome }} hoje: {{ m.valor|brl(4) }} (cotação oficial do Banco Central) | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Cotação do {{ nome|lower }} hoje pela PTAX do Banco Central: {{ m.valor|brl(4) }} em {{ m.data|data_br }}. Conversor de {{ codigo }} para real e gráfico do último ano.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), (None, nome ~ " hoje")]) }}
+<h1>Cotação do {{ nome|lower }} hoje</h1>
+<p class="lead">Taxa PTAX de venda divulgada pelo Banco Central em {{ m.data|data_br("longa") }}.</p>
+<div class="placa">
+  <div class="placa-linha">
+    <span class="placa-nome">1 {{ codigo }}</span>
+    <span class="placa-preco"><small>R$</small>{{ m.valor|num(4) }}</span>
+    <span class="placa-sub">{{ m.var|seta }} no dia</span>
+  </div>
+</div>
+
+<section class="calc" aria-labelledby="conv-t">
+  <h2 id="conv-t" style="margin-top:0">Conversor</h2>
+  <div class="campos">
+    <div class="campo"><label for="v-ext">Valor em {{ nome|lower }} ({{ simbolo }})</label><input id="v-ext" type="number" min="0" step="0.01" value="100" inputmode="decimal"></div>
+    <div class="campo"><label for="v-brl">Valor em reais (R$)</label><input id="v-brl" type="number" min="0" step="0.01" inputmode="decimal"></div>
+    <div class="campo"><label for="spread">Taxa do cartão ou casa de câmbio (%)</label><input id="spread" type="number" min="0" step="0.1" value="0" inputmode="decimal"><p class="ajuda">Cartões costumam somar 4% a 6%, mais IOF.</p></div>
+  </div>
+  <p class="nota" id="conv-nota" aria-live="polite"></p>
+</section>
+
+<h2>{{ nome }} no último ano</h2>
+{{ grafico(m.grafico, casas=4, titulo=nome ~ " PTAX venda, em reais, por dia útil") }}
+
+{{ mc.faq([
+  ("O que é a PTAX?", "É a taxa de câmbio oficial calculada pelo Banco Central a partir das negociações do dia no mercado. Serve de referência para contratos e para a fatura de cartão de crédito em moeda estrangeira."),
+  ("Por que o " ~ nome|lower ~ " que eu compro é mais caro?", "Casas de câmbio, bancos e cartões cobram uma margem sobre a cotação, além do IOF. Use o campo de taxa do conversor para estimar o valor final."),
+  ("Quando a cotação é atualizada?", "Em todo dia útil. Este site busca o valor no Banco Central automaticamente.")
+]) }}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var taxa = {{ m.valor }};
+  var ext = document.getElementById("v-ext"), brl = document.getElementById("v-brl"), sp = document.getElementById("spread"), nota = document.getElementById("conv-nota");
+  function t() { var s = BH.ler(sp); return taxa * (1 + (s > 0 ? s : 0) / 100); }
+  function deExt() { var v = BH.ler(ext); brl.value = v >= 0 ? (v * t()).toFixed(2) : ""; info(); }
+  function deBrl() { var v = BH.ler(brl); ext.value = v >= 0 ? (v / t()).toFixed(2) : ""; info(); }
+  function info() { nota.textContent = "Cotação usada: " + BH.brl(t(), 4) + " por {{ codigo }}."; }
+  ext.addEventListener("input", deExt); brl.addEventListener("input", deBrl); sp.addEventListener("input", deExt);
+  deExt();
+})();
+</script>
+{% endblock %}

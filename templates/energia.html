@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% set atual = aneel.bandeiras[-1] if aneel.bandeiras else None %}
+{% block titulo %}Bandeira tarifária{% if atual %} de {{ (atual.mes ~ "-01")|data_br("mes") }}: {{ atual.bandeira }}{% endif %} e calculadora da conta de luz | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Bandeira tarifária do mês, quanto ela acrescenta na conta e calculadora do consumo de cada aparelho com a tarifa da sua distribuidora. Dados da ANEEL.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), (None, "Conta de luz")]) }}
+<h1>Conta de luz: bandeira do mês e quanto gasta cada aparelho</h1>
+{% if atual %}
+{% set adic = aneel.adicional_100kwh %}
+<div class="placa">
+  <div class="placa-linha">
+    <span class="placa-nome">Bandeira de {{ (atual.mes ~ "-01")|data_br("mes") }}</span>
+    <span class="placa-preco" style="font-size:2.2rem">{{ atual.bandeira }}</span>
+    <span class="placa-sub">{% set v = adic.get(atual.bandeira) %}{% if v %}acréscimo de {{ v|brl(3) }} a cada 100 kWh{% else %}sem acréscimo na conta{% endif %}</span>
+  </div>
+</div>
+<p>Uma casa que consome 200 kWh por mês paga {% set v = adic.get(atual.bandeira) or 0 %}{{ (v*2)|brl }} a mais neste mês por causa da bandeira, antes dos impostos.</p>
+{% if aneel.bandeiras|length > 1 %}
+<h2>Bandeiras dos últimos meses</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Mês</th><th>Bandeira</th><th class="n">Acréscimo por 100 kWh</th></tr></thead>
+  <tbody>{% for b in aneel.bandeiras|reverse %}<tr><td>{{ (b.mes ~ "-01")|data_br("mes") }}</td><td>{{ b.bandeira }}</td><td class="n">{{ (adic.get(b.bandeira) or 0)|brl(3) }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% if not aneel.adicional_oficial %}<p class="nota">Valores de acréscimo de referência da ANEEL; confira a tabela vigente no site da agência.</p>{% endif %}
+{% endif %}
+{% endif %}
+
+<h2>Calculadora de consumo</h2>
+<section class="calc">
+  <div class="campos">
+    {% if aneel.tarifas %}
+    <div class="campo"><label for="dist">Sua distribuidora</label><select id="dist"><option value="">Escolha</option>{% for t in aneel.tarifas %}<option value="{{ t.kwh_sem_impostos }}">{{ t.distribuidora }}</option>{% endfor %}</select></div>
+    {% endif %}
+    <div class="campo"><label for="tarifa">Tarifa por kWh, sem impostos (R$)</label><input id="tarifa" type="number" min="0" step="0.001" value="0.80" inputmode="decimal"></div>
+    <div class="campo"><label for="imp">Impostos e taxas (%)</label><input id="imp" type="number" min="0" step="1" value="25" inputmode="decimal"><p class="ajuda">ICMS, PIS e Cofins somam de 20% a 35%, conforme o estado.</p></div>
+    <div class="campo"><label for="ap">Aparelho</label><select id="ap">
+      <option value="5500|0.25">Chuveiro elétrico (15 min/dia)</option>
+      <option value="1000|8">Ar-condicionado 9.000 BTU inverter (8 h/dia)</option>
+      <option value="150|24">Geladeira (ligada o dia todo, média)</option>
+      <option value="100|5">TV LED 50" (5 h/dia)</option>
+      <option value="500|1">Máquina de lavar (1 h/dia)</option>
+      <option value="1200|0.2">Micro-ondas (12 min/dia)</option>
+      <option value="1000|0.5">Ferro de passar (30 min/dia)</option>
+      <option value="200|6">Computador (6 h/dia)</option>
+      <option value="10|6">Lâmpada LED (6 h/dia)</option>
+    </select></div>
+    <div class="campo"><label for="pot">Potência (watts)</label><input id="pot" type="number" min="0" step="1" inputmode="numeric"></div>
+    <div class="campo"><label for="horas">Horas de uso por dia</label><input id="horas" type="number" min="0" max="24" step="0.25" inputmode="decimal"></div>
+    <div class="campo"><label for="dias">Dias de uso no mês</label><input id="dias" type="number" min="0" max="31" step="1" value="30" inputmode="numeric"></div>
+  </div>
+  <div class="resultado" aria-live="polite"><div class="resultado-grande" id="res"></div><p class="nota" id="det"></p></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var adic = {{ ((aneel.adicional_100kwh or {}).get(atual.bandeira if atual else "", 0) or 0)|json }} / 100;
+  function aparelho() { var p = $("ap").value.split("|"); $("pot").value = p[0]; $("horas").value = p[1]; calc(); }
+  function calc() {
+    var w = BH.ler($("pot")), h = BH.ler($("horas")), d = BH.ler($("dias")), t = BH.ler($("tarifa")), imp = BH.ler($("imp")) || 0;
+    if (!(w >= 0 && h >= 0 && d >= 0 && t > 0)) return;
+    var kwh = w * h * d / 1000, custo = kwh * (t + adic) * (1 + imp / 100);
+    $("res").textContent = BH.brl(custo) + " por mês";
+    $("det").textContent = BH.num(kwh, 1) + " kWh no mês" + (adic ? ", já com a bandeira atual" : "") + ". Em um ano: " + BH.brl(custo * 12) + ".";
+  }
+  if ($("dist")) $("dist").addEventListener("change", function () { if (this.value) { $("tarifa").value = (+this.value).toFixed(3); calc(); } });
+  $("ap").addEventListener("change", aparelho);
+  ["tarifa", "imp", "pot", "horas", "dias"].forEach(function (id) { $(id).addEventListener("input", calc); });
+  aparelho();
+})();
+</script>
+{% endblock %}

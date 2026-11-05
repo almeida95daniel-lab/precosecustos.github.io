@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% block titulo %}Poupança, CDB ou Tesouro Selic: quanto rende o seu dinheiro? | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Calculadora que compara o rendimento da poupança, CDB, LCI/LCA e Tesouro Selic com as taxas de hoje (CDI {{ bcb.cdi.valor|num(2) }}%), já descontando o imposto de renda.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), ("/calculadoras/", "Calculadoras"), (None, "Rendimento")]) }}
+<h1>Quanto rende o seu dinheiro?</h1>
+<p class="lead">Compare poupança, CDB, LCI/LCA e Tesouro Selic com as taxas de hoje, já descontado o imposto de renda.</p>
+
+<section class="calc" aria-labelledby="rt">
+  <h2 id="rt" style="margin-top:0" class="so-leitor">Simulação</h2>
+  <div class="campos">
+    <div class="campo"><label for="valor">Valor aplicado (R$)</label><input id="valor" type="number" min="0" step="100" value="10000" inputmode="decimal"></div>
+    <div class="campo"><label for="aporte">Depósito mensal (R$)</label><input id="aporte" type="number" min="0" step="50" value="0" inputmode="decimal"></div>
+    <div class="campo"><label for="meses">Prazo (meses)</label><input id="meses" type="number" min="1" max="600" step="1" value="12" inputmode="numeric"></div>
+    <div class="campo"><label for="pcdb">CDB paga (% do CDI)</label><input id="pcdb" type="number" min="0" step="1" value="100" inputmode="decimal"></div>
+    <div class="campo"><label for="plci">LCI/LCA paga (% do CDI)</label><input id="plci" type="number" min="0" step="1" value="90" inputmode="decimal"></div>
+  </div>
+  <div class="resultado" aria-live="polite">
+    <p class="nota" id="resumo"></p>
+    <div class="tabela-rolagem">
+    <table>
+      <thead><tr><th>Aplicação</th><th class="n">Total investido</th><th class="n">Rendimento líquido</th><th class="n">Você terá</th></tr></thead>
+      <tbody id="linhas"></tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<h2>Taxas usadas</h2>
+<ul>
+  <li>CDI: {{ bcb.cdi.valor|num(2) }}% ao ano (Banco Central, {{ bcb.cdi.data|data_br }}).</li>
+  <li>Selic: {{ bcb.selic.valor|num(2) }}% ao ano.</li>
+  <li>Poupança: {{ bcb.poupanca.valor|num(4) }}% no último mês, mantido constante na simulação.</li>
+  <li>Imposto de renda do CDB e do Tesouro: 22,5% até 6 meses, 20% até 1 ano, 17,5% até 2 anos e 15% acima disso. Poupança e LCI/LCA são isentas.</li>
+  <li>Tesouro Selic: rende a Selic, menos a taxa de custódia de 0,20% ao ano da B3 sobre o que passar de R$ 10 mil.</li>
+</ul>
+<p class="nota">É uma simulação: as taxas mudam ao longo do tempo e o IOF (cobrado em resgates com menos de 30 dias) não foi considerado. Não é recomendação de investimento.</p>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var CDI = {{ bcb.cdi.valor }}, SELIC = {{ bcb.selic.valor }}, POUP = {{ bcb.poupanca.valor or 0.5 }};
+  var $ = function (id) { return document.getElementById(id); };
+  function aliquota(dias) { return dias <= 180 ? .225 : dias <= 360 ? .20 : dias <= 720 ? .175 : .15; }
+  function mensal(anual) { return Math.pow(1 + anual / 100, 1 / 12) - 1; }
+  function simular(taxaMes, v0, aporte, n, ir, custodia) {
+    // Cada depósito é tributado conforme o próprio prazo (tabela regressiva).
+    var bruto = 0, liquido = 0, investido = 0;
+    for (var k = 0; k <= n; k++) {
+      var dep = k === 0 ? v0 : (k < n ? aporte : 0);
+      if (!dep) continue;
+      var meses = n - k, fator = Math.pow(1 + taxaMes, meses), ganho = dep * (fator - 1);
+      if (custodia) ganho -= Math.max(0, dep - 10000) * 0.002 * meses / 12;
+      investido += dep;
+      liquido += dep + ganho * (ir ? 1 - aliquota(meses * 30) : 1);
+    }
+    return { investido: investido, final: liquido };
+  }
+  function calc() {
+    var v0 = Math.max(0, BH.ler($("valor")) || 0), ap = Math.max(0, BH.ler($("aporte")) || 0), n = Math.max(1, Math.round(BH.ler($("meses")) || 1));
+    var pc = BH.ler($("pcdb")) || 0, pl = BH.ler($("plci")) || 0;
+    var cdiM = mensal(CDI);
+    var lista = [
+      ["Poupança", simular(POUP / 100, v0, ap, n, false)],
+      ["CDB " + BH.num(pc, 0) + "% do CDI", simular(mensal(CDI * pc / 100), v0, ap, n, true)],
+      ["LCI/LCA " + BH.num(pl, 0) + "% do CDI", simular(mensal(CDI * pl / 100), v0, ap, n, false)],
+      ["Tesouro Selic", simular(mensal(SELIC), v0, ap, n, true, true)]
+    ];
+    var melhor = lista.reduce(function (a, b) { return b[1].final > a[1].final ? b : a; });
+    $("linhas").innerHTML = lista.map(function (l) {
+      var r = l[1];
+      return "<tr" + (l === melhor ? ' class="vencedor"' : "") + "><td>" + l[0] + "</td><td class=\"n\">" + BH.brl(r.investido) + "</td><td class=\"n\">" + BH.brl(r.final - r.investido) + "</td><td class=\"n\">" + BH.brl(r.final) + "</td></tr>";
+    }).join("");
+    $("resumo").textContent = "Em " + n + (n === 1 ? " mês" : " meses") + ", a melhor opção é " + melhor[0] + ", com " + BH.brl(melhor[1].final - melhor[1].investido) + " de rendimento líquido.";
+  }
+  ["valor", "aporte", "meses", "pcdb", "plci"].forEach(function (id) { $(id).addEventListener("input", calc); });
+  calc();
+})();
+</script>
+{% endblock %}

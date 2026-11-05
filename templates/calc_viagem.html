@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% block titulo %}Calculadora de custo da viagem de carro (combustível) | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Calcule quanto vai gastar de combustível na viagem com o preço médio da sua cidade, atualizado toda semana pela ANP.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), ("/calculadoras/", "Calculadoras"), (None, "Custo da viagem")]) }}
+<h1>Quanto vou gastar de combustível na viagem?</h1>
+<p class="lead">Informe a distância e o consumo do carro. O preço vem da sua cidade, pela pesquisa da ANP de {{ comb.fim|data_br }}, e pode ser ajustado.</p>
+<section class="calc">
+  <div class="campos">
+    <div class="campo"><label for="dist">Distância (km)</label><input id="dist" type="number" min="0" step="1" value="300" inputmode="numeric"></div>
+    <div class="campo"><label for="volta">Trajeto</label><select id="volta"><option value="1">Só ida</option><option value="2" selected>Ida e volta</option></select></div>
+    <div class="campo"><label for="cons">Consumo do carro (km/l)</label><input id="cons" type="number" min="1" step="0.1" value="11" inputmode="decimal"></div>
+    <div class="campo"><label for="cidade">Cidade de abastecimento</label><input id="cidade" list="lista-v" placeholder="Digite a cidade" autocomplete="off">
+      <datalist id="lista-v">{% for c in cidades_js %}<option value="{{ c.n }} ({{ c.uf }})">{% endfor %}</datalist></div>
+    <div class="campo"><label for="comb">Combustível</label><select id="comb"><option value="gasolina">Gasolina</option><option value="etanol">Etanol</option><option value="diesel_s10">Diesel S10</option><option value="gnv">GNV</option></select></div>
+    <div class="campo"><label for="preco">Preço por litro (R$)</label><input id="preco" type="number" min="0" step="0.01" inputmode="decimal" value="{{ comb.brasil.produtos.gasolina.medio|round(2) if comb.brasil.produtos.gasolina else 6 }}"><p class="ajuda" id="origem">Média do Brasil.</p></div>
+    <div class="campo"><label for="pessoas">Dividir entre (pessoas)</label><input id="pessoas" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
+  </div>
+  <div class="resultado" aria-live="polite"><div class="resultado-grande" id="res"></div><p class="nota" id="det"></p></div>
+</section>
+<p class="nota">Pedágios não estão incluídos. Em estrada o consumo costuma ser melhor que na cidade; use o número do manual ou do computador de bordo.</p>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var BR = {{ {"gasolina": comb.brasil.produtos.get("gasolina", {}).get("medio"), "etanol": comb.brasil.produtos.get("etanol", {}).get("medio"), "diesel_s10": comb.brasil.produtos.get("diesel_s10", {}).get("medio"), "gnv": comb.brasil.produtos.get("gnv", {}).get("medio")}|json }};
+  function sem(s) { return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s*\(..\)\s*$/, "").trim(); }
+  function precoAuto() {
+    var nome = sem($("cidade").value), p = $("comb").value;
+    var c = nome && (window.BH_CIDADES || []).find(function (x) { return sem(x.n) === nome; });
+    if (c && c[p]) { $("preco").value = c[p].toFixed(2); $("origem").textContent = "Média de " + c.n + " (" + c.uf + ")."; }
+    else if (BR[p]) { $("preco").value = BR[p].toFixed(2); $("origem").textContent = nome ? "Sem dado desse combustível na cidade; usando a média do Brasil." : "Média do Brasil."; }
+    calc();
+  }
+  function calc() {
+    var km = BH.ler($("dist")) * +$("volta").value, c = BH.ler($("cons")), p = BH.ler($("preco")), n = Math.max(1, BH.ler($("pessoas")) || 1);
+    if (!(km > 0 && c > 0 && p > 0)) { $("res").textContent = ""; $("det").textContent = "Preencha distância, consumo e preço."; return; }
+    var litros = km / c, total = litros * p;
+    $("res").textContent = BH.brl(total);
+    $("det").textContent = BH.num(km, 0) + " km, " + BH.num(litros, 1) + ($("comb").value === "gnv" ? " m³" : " litros") + (n > 1 ? ". Por pessoa: " + BH.brl(total / n) + "." : ".");
+  }
+  $("cidade").addEventListener("change", precoAuto); $("comb").addEventListener("change", precoAuto);
+  ["dist", "volta", "cons", "preco", "pessoas"].forEach(function (id) { $(id).addEventListener("input", calc); });
+  calc();
+})();
+</script>
+{% endblock %}

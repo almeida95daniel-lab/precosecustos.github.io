@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% block titulo %}Página não encontrada | {{ cfg.nome_site }}{% endblock %}
+{% block conteudo %}
+<h1>Esta página não existe</h1>
+<p class="lead">O endereço pode ter mudado. Procure sua cidade ou volte para o início.</p>
+{% if cidades_js %}{{ mc.busca() }}{% endif %}
+<p><a href="/">Ir para o início</a></p>
+{% endblock %}

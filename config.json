@@ -1,0 +1,12 @@
+{
+  "nome_site": "Preços e Custos",
+  "descricao": "Preço dos combustíveis na sua cidade, dólar, juros e inflação — atualizados sozinhos com dados oficiais.",
+  "url_base": "https://almeida95daniel-lab.github.io/precosecustos.github.io",
+  "caminho_base": "/precosecustos.github.io",
+  "dominio_proprio": "",
+  "email_contato": "contato@precosecustos.com.br",
+  "adsense_cliente": "",
+  "google_analytics": "",
+  "semanas_iniciais_anp": 12,
+  "regra_etanol": 0.7
+}

@@ -1,0 +1,59 @@
+{% macro placa(produtos, rodape="", ordem=None) %}
+<div class="placa" role="group" aria-label="Preços médios">
+  {% for chave in (ordem or PRODUTOS.keys()) if chave in produtos %}
+  {% set d = produtos[chave] %}
+  {% set reais = (d.medio|num(2)) %}
+  <div class="placa-linha">
+    <span class="placa-nome">{{ PRODUTOS[chave].nome }}</span>
+    <span class="placa-preco"><small>R$</small>{{ reais }}</span>
+    <span class="placa-sub">por {{ PRODUTOS[chave].unidade }}{% if d.var is not none %}&ensp;{{ d.var|seta }}{% endif %}</span>
+  </div>
+  {% endfor %}
+  {% if rodape %}<p class="placa-rodape">{{ rodape }}</p>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro busca(rotulo="Qual é a sua cidade?") %}
+<form class="busca" role="search" action="/combustivel/">
+  <label class="so-leitor" for="busca-cidade">{{ rotulo }}</label>
+  <input id="busca-cidade" type="search" list="lista-cidades" placeholder="{{ rotulo }}" autocomplete="off">
+  <datalist id="lista-cidades">
+    {% for c in cidades_js %}<option value="{{ c.n }} ({{ c.uf }})">{% endfor %}
+  </datalist>
+  <button type="submit">Ver preços</button>
+  <p class="busca-msg nota" aria-live="polite" style="flex-basis:100%;margin:0"></p>
+</form>
+{% endmacro %}
+
+{% macro faq(perguntas) %}
+<section class="faq">
+  <h2>Perguntas frequentes</h2>
+  {% for p, r in perguntas %}
+  <details{% if loop.first %} open{% endif %}><summary>{{ p }}</summary><p>{{ r }}</p></details>
+  {% endfor %}
+</section>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{% for p, r in perguntas %}{"@type":"Question","name":{{ p|tojson }},"acceptedAnswer":{"@type":"Answer","text":{{ r|tojson }}}}{% if not loop.last %},{% endif %}{% endfor %}]}
+</script>
+{% endmacro %}
+
+{% macro trilha(itens) %}
+<nav class="trilha" aria-label="Você está em">
+  {% for href, nome in itens %}{% if href %}<a href="{{ href }}">{{ nome }}</a>{% else %}<span aria-current="page">{{ nome }}</span>{% endif %}{% if not loop.last %} / {% endif %}{% endfor %}
+</nav>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{% for href, nome in itens %}{"@type":"ListItem","position":{{ loop.index }},"name":{{ nome|tojson }}{% if href %},"item":{{ (cfg.url_base.rstrip('/') ~ href)|tojson }}{% endif %}}{% if not loop.last %},{% endif %}{% endfor %}]}</script>
+{% endmacro %}
+
+{% macro veredito_etanol(razao, onde) %}
+{% if razao %}
+<div class="veredito">
+  {% if razao <= regra %}
+  <strong>Etanol compensa {{ onde }}</strong>
+  <p>O etanol custa {{ (razao*100)|num(1) }}% do preço da gasolina, abaixo da referência de {{ (regra*100)|num(0) }}%. Para a maioria dos carros flex, abastecer com etanol sai mais barato por quilômetro rodado.</p>
+  {% else %}
+  <strong>Gasolina compensa {{ onde }}</strong>
+  <p>O etanol custa {{ (razao*100)|num(1) }}% do preço da gasolina, acima da referência de {{ (regra*100)|num(0) }}%. Para a maioria dos carros flex, a gasolina rende mais por real gasto.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endmacro %}
