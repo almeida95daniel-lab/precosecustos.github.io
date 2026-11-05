@@ -210,7 +210,7 @@ def garantir_nomes_ibge():
         return
     try:
         import json
-        lista = json.loads(baixar("https://servicodados.ibge.gov.br/api/v1/localidades/municipios"))
+        lista = json.loads(baixar("https://servicodados.ibge.gov.br/api/v1/localidades/municipios", tentativas=1, timeout=20))
         nomes = {}
         for m in lista:
             uf = None
@@ -226,7 +226,24 @@ def garantir_nomes_ibge():
         salvar_json(destino, nomes)
         print(f"[IBGE] {len(nomes)} nomes de municípios salvos")
     except Exception as e:
-        print(f"[IBGE] nomes indisponíveis ({e}); as cidades aparecerão como a ANP escreve")
+        print(f"[IBGE] API do IBGE indisponível ({e}); tentando base aberta no GitHub")
+        try:
+            import csv as _csv
+            ufs = {"11": "RO", "12": "AC", "13": "AM", "14": "RR", "15": "PA", "16": "AP", "17": "TO",
+                   "21": "MA", "22": "PI", "23": "CE", "24": "RN", "25": "PB", "26": "PE", "27": "AL",
+                   "28": "SE", "29": "BA", "31": "MG", "32": "ES", "33": "RJ", "35": "SP", "41": "PR",
+                   "42": "SC", "43": "RS", "50": "MS", "51": "MT", "52": "GO", "53": "DF"}
+            texto = baixar("https://raw.githubusercontent.com/kelvins/municipios-brasileiros/main/csv/municipios.csv").decode("utf-8")
+            nomes = {}
+            for m in _csv.DictReader(io.StringIO(texto)):
+                uf = ufs.get(str(m.get("codigo_uf", "")).strip())
+                if uf and m.get("nome"):
+                    nomes[f"{uf}|{normalizar(m['nome']).replace('-', ' ')}"] = m["nome"]
+            if nomes:
+                salvar_json(destino, nomes)
+                print(f"[IBGE] {len(nomes)} nomes de municípios salvos (base aberta)")
+        except Exception as e2:
+            print(f"[IBGE] nomes indisponíveis ({e2}); as cidades aparecerão como a ANP escreve")
 
 
 # ---------------------------------------------------------------- principal
