@@ -74,15 +74,22 @@ def coletar_tarifas():
     for r in linhas:
         if normalizar(r.get("DscSubClasse", "Residencial")) not in ("RESIDENCIAL", ""):
             continue
+        # só a tarifa comum: sem tarifa social, energia solar (SCEE), postos horários etc.
+        if normalizar(r.get("DscDetalhe", "")) not in ("NAO SE APLICA", ""):
+            continue
+        if normalizar(r.get("NomPostoTarifario", "")) not in ("NAO SE APLICA", ""):
+            continue
         sig = r.get("SigAgente")
         tusd, te = numero(r.get("VlrTUSD")), numero(r.get("VlrTE"))
         if not sig or tusd is None or te is None:
             continue
         ini = data_iso(r.get("DatInicioVigencia"))
-        if sig not in por_dist or ini > por_dist[sig]["vigencia"]:
-            fator = 1000 if normalizar(r.get("DscUnidadeTerciaria", "MWh")) == "MWH" else 1
-            por_dist[sig] = {"distribuidora": sig, "vigencia": ini,
-                             "kwh_sem_impostos": round((tusd + te) / fator, 5)}
+        fator = 1000 if normalizar(r.get("DscUnidadeTerciaria", "MWh")) == "MWH" else 1
+        valor = round((tusd + te) / fator, 5)
+        atual = por_dist.get(sig)
+        # mais recente vence; no mesmo dia, fica o maior valor (descontos ficam de fora)
+        if not atual or ini > atual["vigencia"] or (ini == atual["vigencia"] and valor > atual["kwh_sem_impostos"]):
+            por_dist[sig] = {"distribuidora": sig, "vigencia": ini, "kwh_sem_impostos": valor}
     return sorted(por_dist.values(), key=lambda d: d["distribuidora"])
 
 
