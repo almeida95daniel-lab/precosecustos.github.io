@@ -1,4 +1,4 @@
-# Preços e Custos — como colocar o site no ar
+# Bolso Hoje — como colocar o site no ar
 
 O site se atualiza sozinho: duas vezes por dia, um robô no GitHub busca os dados da ANP,
 do Banco Central e da ANEEL, gera todas as páginas e publica. Você só faz a configuração
@@ -25,11 +25,11 @@ A primeira execução baixa as últimas 12 semanas da ANP. A partir daí, tudo �
 
 ## Parte 2 — Domínio próprio (recomendado antes de pedir o AdSense)
 
-1. Registre o domínio em https://registro.br (exemplo: `precosecustos.com.br`).
+1. Registre o domínio em https://registro.br (exemplo: `bolsohoje.com.br`).
 2. No `config.json`, preencha:
-   - `"url_base": "https://precosecustos.com.br"`
+   - `"url_base": "https://bolsohoje.com.br"`
    - `"caminho_base": ""` (vazio: com domínio próprio o site fica na raiz)
-   - `"dominio_proprio": "precosecustos.com.br"`
+   - `"dominio_proprio": "bolsohoje.com.br"`
 3. No registro.br, em DNS, crie quatro registros **A** apontando para
    `185.199.108.153`, `185.199.109.153`, `185.199.110.153` e `185.199.111.153`,
    e um **CNAME** `www` apontando para `SEU-USUARIO.github.io`.
