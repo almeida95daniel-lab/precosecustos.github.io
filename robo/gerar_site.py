@@ -243,6 +243,10 @@ def main():
     (SAIDA / "static").mkdir(parents=True)
     for arq in (RAIZ / "static").iterdir():
         shutil.copy(arq, SAIDA / "static" / arq.name)
+    # Arquivos que precisam ficar na raiz do site (ex.: verificação do Google)
+    if (RAIZ / "raiz").exists():
+        for arq in (RAIZ / "raiz").iterdir():
+            shutil.copy(arq, SAIDA / arq.name)
 
     comb = montar_combustiveis()
     bcb = montar_bcb()
