@@ -113,17 +113,17 @@
   {
    "distribuidora": "CEA",
    "vigencia": "2026-04-13",
-   "kwh_sem_impostos": 0.54539
+   "kwh_sem_impostos": 0.82515
   },
   {
    "distribuidora": "CEDRAP",
    "vigencia": "2026-01-01",
-   "kwh_sem_impostos": 0.86838
+   "kwh_sem_impostos": 1.09084
   },
   {
    "distribuidora": "CEDRI",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 0.64505
+   "kwh_sem_impostos": 0.99871
   },
   {
    "distribuidora": "CEEE-D",
@@ -133,7 +133,7 @@
   {
    "distribuidora": "CEGERO",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 0.34234
+   "kwh_sem_impostos": 0.58605
   },
   {
    "distribuidora": "CEJAMA",
@@ -143,7 +143,7 @@
   {
    "distribuidora": "CELESC",
    "vigencia": "2026-08-22",
-   "kwh_sem_impostos": 0.45447
+   "kwh_sem_impostos": 0.75975
   },
   {
    "distribuidora": "CELETRO",
@@ -153,12 +153,12 @@
   {
    "distribuidora": "CEMIG-D",
    "vigencia": "2026-05-28",
-   "kwh_sem_impostos": 0.62352
+   "kwh_sem_impostos": 0.90329
   },
   {
    "distribuidora": "CEMIRIM",
    "vigencia": "2026-05-29",
-   "kwh_sem_impostos": 0.51683
+   "kwh_sem_impostos": 0.73223
   },
   {
    "distribuidora": "CEPRAG",
@@ -173,7 +173,7 @@
   {
    "distribuidora": "CERAL ARARUAMA",
    "vigencia": "2026-04-29",
-   "kwh_sem_impostos": 1.06684
+   "kwh_sem_impostos": 1.20634
   },
   {
    "distribuidora": "CERAL-DIS",
@@ -188,7 +188,7 @@
   {
    "distribuidora": "CERCI",
    "vigencia": "2026-04-29",
-   "kwh_sem_impostos": 1.13006
+   "kwh_sem_impostos": 1.50089
   },
   {
    "distribuidora": "CERCOS",
@@ -203,22 +203,22 @@
   {
    "distribuidora": "CERES",
    "vigencia": "2026-04-29",
-   "kwh_sem_impostos": 1.14745
+   "kwh_sem_impostos": 1.56923
   },
   {
    "distribuidora": "CERFOX",
    "vigencia": "2026-07-30",
-   "kwh_sem_impostos": 0.64463
+   "kwh_sem_impostos": 0.84077
   },
   {
    "distribuidora": "CERGAL",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 0.63673
+   "kwh_sem_impostos": 0.8658
   },
   {
    "distribuidora": "CERGAPA",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 0.32015
+   "kwh_sem_impostos": 0.54511
   },
   {
    "distribuidora": "CERGRAL",
@@ -258,17 +258,17 @@
   {
    "distribuidora": "CERMOFUL",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 0.63928
+   "kwh_sem_impostos": 0.91791
   },
   {
    "distribuidora": "CERNHE",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 0.66091
+   "kwh_sem_impostos": 0.8223
   },
   {
    "distribuidora": "CERPALO",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 0.70206
+   "kwh_sem_impostos": 1.01971
   },
   {
    "distribuidora": "CERPRO",
@@ -283,17 +283,17 @@
   {
    "distribuidora": "CERRP",
    "vigencia": "2026-05-29",
-   "kwh_sem_impostos": 0.58586
+   "kwh_sem_impostos": 0.74254
   },
   {
    "distribuidora": "CERSAD DISTRIBUI",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 0.29409
+   "kwh_sem_impostos": 0.40502
   },
   {
    "distribuidora": "CERSUL",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 0.42538
+   "kwh_sem_impostos": 0.71059
   },
   {
    "distribuidora": "CERTAJA",
@@ -313,7 +313,7 @@
   {
    "distribuidora": "CERTREL",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 1.00556
+   "kwh_sem_impostos": 1.2242
   },
   {
    "distribuidora": "CERVAM",
@@ -343,12 +343,12 @@
   {
    "distribuidora": "COCEL",
    "vigencia": "2026-06-29",
-   "kwh_sem_impostos": 0.47355
+   "kwh_sem_impostos": 0.73437
   },
   {
    "distribuidora": "CODESAM",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 0.4195
+   "kwh_sem_impostos": 0.66618
   },
   {
    "distribuidora": "COELBA",
@@ -358,7 +358,7 @@
   {
    "distribuidora": "COOPERA",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 0.55772
+   "kwh_sem_impostos": 0.7226
   },
   {
    "distribuidora": "COOPERALIANÇA",
@@ -368,7 +368,7 @@
   {
    "distribuidora": "COOPERCOCAL",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 0.49764
+   "kwh_sem_impostos": 0.79627
   },
   {
    "distribuidora": "COOPERLUZ",
@@ -378,7 +378,7 @@
   {
    "distribuidora": "COOPERMILA",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 0.53239
+   "kwh_sem_impostos": 0.72763
   },
   {
    "distribuidora": "COOPERNORTE",
@@ -398,17 +398,17 @@
   {
    "distribuidora": "COORSEL",
    "vigencia": "2026-09-30",
-   "kwh_sem_impostos": 0.41064
+   "kwh_sem_impostos": 0.58974
   },
   {
    "distribuidora": "COPEL-DIS",
    "vigencia": "2026-06-24",
-   "kwh_sem_impostos": 0.48737
+   "kwh_sem_impostos": 0.76802
   },
   {
    "distribuidora": "COPREL",
    "vigencia": "2026-07-30",
-   "kwh_sem_impostos": 0.43771
+   "kwh_sem_impostos": 0.71632
   },
   {
    "distribuidora": "COSERN",
@@ -443,7 +443,7 @@
   {
    "distribuidora": "CPFL Santa Cruz",
    "vigencia": "2026-04-22",
-   "kwh_sem_impostos": 0.59183
+   "kwh_sem_impostos": 0.81258
   },
   {
    "distribuidora": "CPFL-PAULISTA",
@@ -458,7 +458,7 @@
   {
    "distribuidora": "CRELUZ-D",
    "vigencia": "2026-07-30",
-   "kwh_sem_impostos": 0.56827
+   "kwh_sem_impostos": 0.78561
   },
   {
    "distribuidora": "Ceraçá",
@@ -483,12 +483,12 @@
   {
    "distribuidora": "EAC",
    "vigencia": "2026-08-26",
-   "kwh_sem_impostos": 0.6136
+   "kwh_sem_impostos": 0.82971
   },
   {
    "distribuidora": "EBO",
    "vigencia": "2023-02-04",
-   "kwh_sem_impostos": 0.30271
+   "kwh_sem_impostos": 0.53644
   },
   {
    "distribuidora": "EDEVP",
@@ -498,7 +498,7 @@
   {
    "distribuidora": "EDP ES",
    "vigencia": "2026-08-07",
-   "kwh_sem_impostos": 0.54069
+   "kwh_sem_impostos": 0.84371
   },
   {
    "distribuidora": "EDP SP",
@@ -513,27 +513,27 @@
   {
    "distribuidora": "EFLJC",
    "vigencia": "2026-08-29",
-   "kwh_sem_impostos": 0.45447
+   "kwh_sem_impostos": 0.75975
   },
   {
    "distribuidora": "EFLUL",
    "vigencia": "2026-08-29",
-   "kwh_sem_impostos": 0.45447
+   "kwh_sem_impostos": 0.75975
   },
   {
    "distribuidora": "ELEKTRO",
    "vigencia": "2026-08-27",
-   "kwh_sem_impostos": 0.60109
+   "kwh_sem_impostos": 0.89163
   },
   {
    "distribuidora": "ELETROCAR",
    "vigencia": "2026-07-22",
-   "kwh_sem_impostos": 0.54081
+   "kwh_sem_impostos": 0.79643
   },
   {
    "distribuidora": "ELETROPAULO",
    "vigencia": "2026-07-04",
-   "kwh_sem_impostos": 0.50978
+   "kwh_sem_impostos": 0.78938
   },
   {
    "distribuidora": "ELFSM",
@@ -543,22 +543,22 @@
   {
    "distribuidora": "EMR",
    "vigencia": "2026-06-22",
-   "kwh_sem_impostos": 0.58779
+   "kwh_sem_impostos": 0.91899
   },
   {
    "distribuidora": "EMS",
    "vigencia": "2026-04-24",
-   "kwh_sem_impostos": 0.69981
+   "kwh_sem_impostos": 0.9866
   },
   {
    "distribuidora": "EMT",
    "vigencia": "2026-04-08",
-   "kwh_sem_impostos": 0.58432
+   "kwh_sem_impostos": 0.89942
   },
   {
    "distribuidora": "ENEL CE",
    "vigencia": "2026-08-26",
-   "kwh_sem_impostos": 0.46047
+   "kwh_sem_impostos": 0.70175
   },
   {
    "distribuidora": "ENEL RJ",
@@ -568,17 +568,17 @@
   {
    "distribuidora": "ENF",
    "vigencia": "2022-06-22",
-   "kwh_sem_impostos": 0.478
+   "kwh_sem_impostos": 0.82193
   },
   {
    "distribuidora": "EPB",
    "vigencia": "2026-08-28",
-   "kwh_sem_impostos": 0.44056
+   "kwh_sem_impostos": 0.7097
   },
   {
    "distribuidora": "EQUATORIAL AL",
    "vigencia": "2026-05-03",
-   "kwh_sem_impostos": 0.57046
+   "kwh_sem_impostos": 0.85141
   },
   {
    "distribuidora": "EQUATORIAL GO",
@@ -588,12 +588,12 @@
   {
    "distribuidora": "EQUATORIAL MA",
    "vigencia": "2026-08-28",
-   "kwh_sem_impostos": 0.60029
+   "kwh_sem_impostos": 0.88884
   },
   {
    "distribuidora": "EQUATORIAL PA",
    "vigencia": "2026-09-18",
-   "kwh_sem_impostos": 0.73993
+   "kwh_sem_impostos": 1.04322
   },
   {
    "distribuidora": "EQUATORIAL PI",
@@ -603,12 +603,12 @@
   {
    "distribuidora": "ERO",
    "vigencia": "2026-08-26",
-   "kwh_sem_impostos": 0.48948
+   "kwh_sem_impostos": 0.76244
   },
   {
    "distribuidora": "ESE",
    "vigencia": "2026-04-22",
-   "kwh_sem_impostos": 0.46277
+   "kwh_sem_impostos": 0.75461
   },
   {
    "distribuidora": "ESS",
@@ -618,7 +618,7 @@
   {
    "distribuidora": "ETO",
    "vigencia": "2026-08-26",
-   "kwh_sem_impostos": 0.70887
+   "kwh_sem_impostos": 0.99278
   },
   {
    "distribuidora": "HIDROPAN",
@@ -633,7 +633,7 @@
   {
    "distribuidora": "MUXENERGIA",
    "vigencia": "2026-07-22",
-   "kwh_sem_impostos": 0.50146
+   "kwh_sem_impostos": 0.74458
   },
   {
    "distribuidora": "Neoenergia Brasília",
@@ -643,7 +643,7 @@
   {
    "distribuidora": "Neoenergia PE",
    "vigencia": "2026-04-29",
-   "kwh_sem_impostos": 0.53028
+   "kwh_sem_impostos": 0.79886
   },
   {
    "distribuidora": "Não Informado",
@@ -653,12 +653,12 @@
   {
    "distribuidora": "PACTO ENERGIA PR",
    "vigencia": "2026-08-26",
-   "kwh_sem_impostos": 0.48737
+   "kwh_sem_impostos": 0.76802
   },
   {
    "distribuidora": "RGE",
    "vigencia": "2026-06-19",
-   "kwh_sem_impostos": 0.62109
+   "kwh_sem_impostos": 0.94461
   },
   {
    "distribuidora": "RGE SUL",
@@ -668,7 +668,7 @@
   {
    "distribuidora": "SULGIPE",
    "vigencia": "2026-08-26",
-   "kwh_sem_impostos": 0.50731
+   "kwh_sem_impostos": 0.71881
   },
   {
    "distribuidora": "UHENPAL",
@@ -678,7 +678,7 @@
   {
    "distribuidora": "Âmbar Amazonas",
    "vigencia": "2026-05-26",
-   "kwh_sem_impostos": 0.48685
+   "kwh_sem_impostos": 0.87571
   },
   {
    "distribuidora": "Âmbar Roraima",
