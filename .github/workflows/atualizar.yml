@@ -14,6 +14,7 @@ permissions:
   contents: write
   pages: write
   id-token: write
+  deployments: read
 
 concurrency:
   group: atualizar
@@ -77,5 +78,18 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
+      - name: Cancelar publicação anterior travada
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for sha in $(gh api "repos/$GITHUB_REPOSITORY/deployments?environment=github-pages&per_page=5" -q '.[].sha'); do
+            if [ "$sha" != "$GITHUB_SHA" ]; then
+              gh api -X POST "repos/$GITHUB_REPOSITORY/pages/deployments/$sha/cancel" >/dev/null 2>&1 && echo "cancelada: $sha" || true
+            fi
+          done
+        continue-on-error: true
+
       - id: deploy
         uses: actions/deploy-pages@v4
+        with:
+          timeout: 900000
