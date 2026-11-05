@@ -113,7 +113,7 @@
   {
    "distribuidora": "CEA",
    "vigencia": "2026-04-13",
-   "kwh_sem_impostos": 0.54539
+   "kwh_sem_impostos": 0.82515
   },
   {
    "distribuidora": "CEDRAP",
@@ -343,7 +343,7 @@
   {
    "distribuidora": "COCEL",
    "vigencia": "2026-06-29",
-   "kwh_sem_impostos": 0.73437
+   "kwh_sem_impostos": 0.47355
   },
   {
    "distribuidora": "CODESAM",
@@ -403,7 +403,7 @@
   {
    "distribuidora": "COPEL-DIS",
    "vigencia": "2026-06-24",
-   "kwh_sem_impostos": 0.48737
+   "kwh_sem_impostos": 0.76802
   },
   {
    "distribuidora": "COPREL",
@@ -503,7 +503,7 @@
   {
    "distribuidora": "EDP SP",
    "vigencia": "2026-10-23",
-   "kwh_sem_impostos": 0.51076
+   "kwh_sem_impostos": 0.80168
   },
   {
    "distribuidora": "EEB",
@@ -523,7 +523,7 @@
   {
    "distribuidora": "ELEKTRO",
    "vigencia": "2026-08-27",
-   "kwh_sem_impostos": 0.89163
+   "kwh_sem_impostos": 0.60109
   },
   {
    "distribuidora": "ELETROCAR",
@@ -553,7 +553,7 @@
   {
    "distribuidora": "EMT",
    "vigencia": "2026-04-08",
-   "kwh_sem_impostos": 0.89942
+   "kwh_sem_impostos": 0.58432
   },
   {
    "distribuidora": "ENEL CE",
@@ -578,12 +578,12 @@
   {
    "distribuidora": "EQUATORIAL AL",
    "vigencia": "2026-05-03",
-   "kwh_sem_impostos": 0.57046
+   "kwh_sem_impostos": 0.85141
   },
   {
    "distribuidora": "EQUATORIAL GO",
    "vigencia": "2026-10-22",
-   "kwh_sem_impostos": 0.65739
+   "kwh_sem_impostos": 0.95439
   },
   {
    "distribuidora": "EQUATORIAL MA",
@@ -603,7 +603,7 @@
   {
    "distribuidora": "ERO",
    "vigencia": "2026-08-26",
-   "kwh_sem_impostos": 0.76244
+   "kwh_sem_impostos": 0.48948
   },
   {
    "distribuidora": "ESE",
