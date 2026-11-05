@@ -60,19 +60,24 @@ def descobrir_semanas():
     except Exception as e:
         print(f"[ANP] página de listagem indisponível ({e}); vou tentar adivinhar os endereços.")
 
-    if not any("resumo" in v for v in semanas.values()):
-        # A semana da ANP vai de domingo a sábado.
-        hoje = date.today()
-        sabado = hoje - timedelta(days=(hoje.weekday() - 5) % 7)
-        for k in range(0, 16):
-            fim = sabado - timedelta(weeks=k)
-            ini = fim - timedelta(days=6)
-            nome = f"{ini:%Y-%m-%d}_{fim:%Y-%m-%d}.xlsx"
-            semanas[(ini, fim)] = {
-                "resumo": f"{BASE}/{fim.year}/resumo_semanal_lpc_{nome}",
-                "revendas": f"{BASE}/{fim.year}/revendas_lpc_{nome}",
-                "adivinhado": True,
-            }
+    # A semana da ANP vai de domingo a sábado. Além dos links da página (que às vezes
+    # demora a ser atualizada), testa o endereço padrão das semanas mais recentes.
+    achadas = [s for s, v in semanas.items() if "resumo" in v]
+    mais_nova = max((s[1] for s in achadas), default=date(2000, 1, 1))
+    hoje = date.today()
+    sabado = hoje - timedelta(days=(hoje.weekday() - 5) % 7)
+    for k in range(0, 16 if not achadas else 8):
+        fim = sabado - timedelta(weeks=k)
+        ini = fim - timedelta(days=6)
+        if fim <= mais_nova or (ini, fim) in semanas:
+            continue
+        nome = f"{ini:%Y-%m-%d}_{fim:%Y-%m-%d}.xlsx"
+        semanas[(ini, fim)] = {
+            "resumo": f"{BASE}/{fim.year}/resumo_semanal_lpc_{nome}",
+            "revendas": f"{BASE}/{fim.year}/revendas_lpc_{nome}",
+            "adivinhado": True,
+        }
+    print(f"[ANP] semanas na página: {len(achadas)} (mais recente {mais_nova}); testando também {sum(1 for v in semanas.values() if v.get('adivinhado'))} endereços prováveis")
     return semanas
 
 
@@ -197,12 +202,40 @@ def registrar_semana(historico, fim: date, registros):
         historico.append({"semana_fim": chave, **{k: ("" if r[k] is None else r[k]) for k in CAMPOS_HIST[1:]}})
 
 
+# ---------------------------------------------------------------- nomes oficiais (IBGE)
+def garantir_nomes_ibge():
+    """A ANP publica nomes sem acento; o IBGE tem a grafia oficial."""
+    destino = DADOS / "ibge_municipios.json"
+    if destino.exists():
+        return
+    try:
+        import json
+        lista = json.loads(baixar("https://servicodados.ibge.gov.br/api/v1/localidades/municipios"))
+        nomes = {}
+        for m in lista:
+            uf = None
+            try:
+                uf = m["microrregiao"]["mesorregiao"]["UF"]["sigla"]
+            except (TypeError, KeyError):
+                try:
+                    uf = m["regiao-imediata"]["regiao-intermediaria"]["UF"]["sigla"]
+                except (TypeError, KeyError):
+                    pass
+            if uf:
+                nomes[f"{uf}|{normalizar(m['nome']).replace('-', ' ')}"] = m["nome"]
+        salvar_json(destino, nomes)
+        print(f"[IBGE] {len(nomes)} nomes de municípios salvos")
+    except Exception as e:
+        print(f"[IBGE] nomes indisponíveis ({e}); as cidades aparecerão como a ANP escreve")
+
+
 # ---------------------------------------------------------------- principal
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--resumo", help="planilha resumo_semanal local (teste)")
     ap.add_argument("--revendas", help="planilha revendas local (teste)")
     args = ap.parse_args()
+    garantir_nomes_ibge()
 
     estado = ler_json(PASTA / "estado.json", {"semanas": []})
     historico = carregar_historico()
@@ -215,7 +248,10 @@ def main():
         semanas = descobrir_semanas()
         ordem = sorted(semanas.items(), key=lambda kv: kv[0][1], reverse=True)
         limite = CONFIG.get("semanas_iniciais_anp", 12) if not vistas else 4
-        fila = [kv for kv in ordem[:limite] if kv[0][1].isoformat() not in vistas]
+        adivinhadas = [kv for kv in ordem if kv[1].get("adivinhado")]
+        reais = [kv for kv in ordem if not kv[1].get("adivinhado")]
+        fila = [kv for kv in adivinhadas + reais[:limite] if kv[0][1].isoformat() not in vistas]
+        fila.sort(key=lambda kv: kv[0][1], reverse=True)
         fila.reverse()  # mais antiga primeiro
 
     nova_ultima = None
@@ -225,7 +261,12 @@ def main():
         except FileNotFoundError:
             continue  # semana adivinhada que não existe
         except Exception as e:
-            print(f"[ANP] erro na semana {fim}: {e}")
+            if not urls.get("adivinhado"):
+                print(f"[ANP] erro na semana {fim}: {e}")
+            continue
+        if not conteudo.startswith(b"PK"):
+            if not urls.get("adivinhado"):
+                print(f"[ANP] semana {fim}: o endereço não devolveu uma planilha")
             continue
         registros = ler_resumo(conteudo)
         if not registros:

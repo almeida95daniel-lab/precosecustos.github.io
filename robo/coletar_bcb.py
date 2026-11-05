@@ -12,23 +12,25 @@ from comum import DADOS, baixar, ler_json, numero, salvar_json
 
 SERIES = {
     # chave: (código SGS, descrição, modo)
-    "dolar": (1, "Dólar comercial (PTAX venda), R$", "ultimos:500"),
-    "euro": (21619, "Euro (PTAX venda), R$", "ultimos:500"),
-    "selic": (432, "Meta da taxa Selic, % ao ano", "ultimos:900"),
-    "cdi": (4389, "CDI anualizado, % ao ano", "ultimos:500"),
+    "dolar": (1, "Dólar comercial (PTAX venda), R$", "anos:2"),
+    "euro": (21619, "Euro (PTAX venda), R$", "anos:2"),
+    "selic": (432, "Meta da taxa Selic, % ao ano", "anos:4"),
+    "cdi": (4389, "CDI anualizado, % ao ano", "anos:3"),
     "ipca": (433, "IPCA mensal, %", "desde:1995"),
-    "ipca12": (13522, "IPCA acumulado em 12 meses, %", "ultimos:120"),
+    "ipca12": (13522, "IPCA acumulado em 12 meses, %", "anos:10"),
     "igpm": (189, "IGP-M mensal, %", "desde:1995"),
     "inpc": (188, "INPC mensal, %", "desde:1995"),
-    "poupanca": (195, "Rendimento da poupança no mês, %", "ultimos:60"),
+    "poupanca": (195, "Rendimento da poupança no mês, %", "anos:2"),
 }
 
 
 def _baixar_serie(codigo, modo):
     base = f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo}/dados"
     tipo, valor = modo.split(":")
-    if tipo == "ultimos":
-        urls = [f"{base}/ultimos/{valor}?formato=json"]
+    if tipo == "anos":  # a API recusa /ultimos/N com N grande; usa intervalo de datas
+        hoje = date.today()
+        ini = date(hoje.year - int(valor), hoje.month, 1)
+        urls = [f"{base}?formato=json&dataInicial={ini:%d/%m/%Y}&dataFinal={hoje:%d/%m/%Y}"]
     else:  # janelas de 10 anos (limite da API)
         urls, ano, hoje = [], int(valor), date.today()
         while ano <= hoje.year:

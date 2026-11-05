@@ -148,11 +148,17 @@ def montar_combustiveis():
     postos = (ler_json(DADOS / "anp" / "postos.json") or {})
     postos = postos.get("cidades", {}) if postos.get("semana_fim") == fim else {}
 
+    from comum import normalizar
+    ibge = ler_json(DADOS / "ibge_municipios.json") or {}
+
+    def nome_oficial(uf, mun):
+        return ibge.get(f"{uf}|{normalizar(mun).replace('-', ' ')}", mun)
+
     cidades = []
     for (nivel, uf, mun), prods in atual.items():
         if nivel != "municipio":
             continue
-        c = {"uf": uf, "nome": mun, "slug": slug(mun), "estado": UFS[uf],
+        c = {"uf": uf, "nome": nome_oficial(uf, mun), "slug": slug(mun), "estado": UFS[uf],
              "url": f"/combustivel/{uf.lower()}/{slug(mun)}/", "produtos": prods,
              "serie": series[(nivel, uf, mun)], "postos": postos.get(f"{uf}|{mun}", {})}
         g, e = prods.get("gasolina"), prods.get("etanol")
@@ -287,11 +293,17 @@ def main():
             pagina("/dolar-hoje/", "moeda.html", 0.9, m=bcb["dolar"], nome="Dólar", simbolo="US$", codigo="USD")
         if bcb.get("euro"):
             pagina("/euro-hoje/", "moeda.html", 0.8, m=bcb["euro"], nome="Euro", simbolo="€", codigo="EUR")
-        pagina("/selic-hoje/", "indicador.html", 0.8, ind="selic")
-        pagina("/cdi-hoje/", "indicador.html", 0.7, ind="cdi")
-        pagina("/ipca-inflacao/", "indicador.html", 0.8, ind="ipca")
-        pagina("/calculadoras/rendimento/", "calc_rendimento.html", 0.8)
-        pagina("/calculadoras/corrigir-pela-inflacao/", "calc_inflacao.html", 0.8)
+        tem = lambda k: bcb.get(k, {}).get("valor") is not None
+        if tem("selic"):
+            pagina("/selic-hoje/", "indicador.html", 0.8, ind="selic")
+        if tem("cdi"):
+            pagina("/cdi-hoje/", "indicador.html", 0.7, ind="cdi")
+        if tem("ipca12"):
+            pagina("/ipca-inflacao/", "indicador.html", 0.8, ind="ipca")
+        if tem("cdi") and tem("selic"):
+            pagina("/calculadoras/rendimento/", "calc_rendimento.html", 0.8)
+        if bcb["series"].get("ipca"):
+            pagina("/calculadoras/corrigir-pela-inflacao/", "calc_inflacao.html", 0.8)
     if comb:
         pagina("/calculadoras/custo-da-viagem/", "calc_viagem.html", 0.7)
     if env.globals["tem_energia"]:
