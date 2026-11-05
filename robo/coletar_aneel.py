@@ -33,6 +33,27 @@ def recursos(busca):
     return res
 
 
+def data_iso(valor) -> str:
+    """Aceita '2025-07-01T00:00:00' ou '01/07/2025' e devolve '2025-07-01'."""
+    s = str(valor or "").strip()
+    if len(s) >= 10 and s[2] == "/" and s[5] == "/":
+        return f"{s[6:10]}-{s[3:5]}-{s[0:2]}"
+    return s[:10]
+
+
+def bandeira_canonica(nome) -> str | None:
+    n = normalizar(nome)
+    if "ESCASSEZ" in n:
+        return "Escassez Hídrica"
+    if "VERMELHA" in n:
+        return "Vermelha Patamar 2" if "2" in n else "Vermelha Patamar 1"
+    if "AMARELA" in n:
+        return "Amarela"
+    if "VERDE" in n:
+        return "Verde"
+    return None
+
+
 def chave(reg, *termos):
     for k in reg:
         if all(t in normalizar(k) for t in termos):
@@ -57,7 +78,7 @@ def coletar_tarifas():
         tusd, te = numero(r.get("VlrTUSD")), numero(r.get("VlrTE"))
         if not sig or tusd is None or te is None:
             continue
-        ini = str(r.get("DatInicioVigencia", ""))[:10]
+        ini = data_iso(r.get("DatInicioVigencia"))
         if sig not in por_dist or ini > por_dist[sig]["vigencia"]:
             fator = 1000 if normalizar(r.get("DscUnidadeTerciaria", "MWh")) == "MWH" else 1
             por_dist[sig] = {"distribuidora": sig, "vigencia": ini,
@@ -71,25 +92,32 @@ def coletar_bandeiras():
     adic = [r for r in todos if "ADICIONAL" in normalizar(r[1])]
     meses = []
     if acion:
-        regs = api("datastore_search", resource_id=acion[0][2], limit="400")["records"]
+        regs = api("datastore_search", resource_id=acion[0][2], limit="32000")["records"]
         if regs:
             kc, kb = chave(regs[0], "COMPETENCIA"), chave(regs[0], "BANDEIRA")
             for r in regs:
-                if kc and kb and r.get(kb):
-                    meses.append({"mes": str(r[kc])[:7], "bandeira": str(r[kb]).strip()})
+                b = bandeira_canonica(r.get(kb)) if kb else None
+                if kc and b:
+                    meses.append({"mes": data_iso(r[kc])[:7], "bandeira": b})
     meses = sorted({m["mes"]: m for m in meses}.values(), key=lambda m: m["mes"])
     valores = {}
     if adic:
-        regs = api("datastore_search", resource_id=adic[0][2], limit="400")["records"]
+        regs = api("datastore_search", resource_id=adic[0][2], limit="32000")["records"]
         if regs:
             kb, kv, ki = chave(regs[0], "BANDEIRA"), chave(regs[0], "VLR"), chave(regs[0], "INICIO")
             ult = {}
             for r in regs:
-                nome, v, ini = r.get(kb), numero(r.get(kv)), str(r.get(ki, ""))[:10]
+                nome, v, ini = bandeira_canonica(r.get(kb)), numero(r.get(kv)), data_iso(r.get(ki))
                 if nome and v is not None and (nome not in ult or ini > ult[nome][0]):
                     ult[nome] = (ini, v)
             # valores vêm em R$/MWh -> R$ por 100 kWh
             valores = {k: round(v / 10, 3) for k, (_, v) in ult.items()}
+            valores.setdefault("Verde", 0.0)
+            # conferência de sanidade: amarela < vermelha 1 < vermelha 2
+            ok = valores.get("Amarela", 0) < valores.get("Vermelha Patamar 1", 0) < valores.get("Vermelha Patamar 2", 0)
+            if not ok:
+                print(f"[ANEEL] valores de bandeira inconsistentes {valores}; usando a tabela de referência")
+                valores = {}
     return meses[-24:], (valores or ADICIONAL_RESERVA), bool(valores)
 
 

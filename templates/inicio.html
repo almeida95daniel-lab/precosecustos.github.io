@@ -22,6 +22,7 @@
   {% if bcb.cdi.valor is not none %}<a class="indice" href="/cdi-hoje/"><span class="indice-nome">CDI</span><span class="indice-valor">{{ bcb.cdi.valor|num(2) }}% ao ano</span><span class="meta">referência dos investimentos</span></a>{% endif %}
   {% if bcb.poupanca.valor is not none %}<a class="indice" href="/calculadoras/rendimento/"><span class="indice-nome">Poupança</span><span class="indice-valor">{{ bcb.poupanca.valor|num(4) }}% ao mês</span><span class="meta">compare com CDB e Tesouro</span></a>{% endif %}
 </div>
+{% if moedas %}<p><a href="/moedas/">Ver todas as moedas: libra, iene, franco suíço, yuan e outras</a></p>{% endif %}
 {% endif %}
 
 <h2>Calculadoras</h2>

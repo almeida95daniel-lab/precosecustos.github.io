@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% set atual = energia.atual %}
+{% set v = energia.adicional.get(atual.bandeira, 0) if atual else 0 %}
+{% block titulo %}Tarifa de energia {{ d.nome }} {{ ano }}: {{ d.kwh|brl(3) }} por kWh | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Quanto custa o kWh da {{ d.nome }} ({{ UFS[d.uf] }}): tarifa residencial homologada pela ANEEL, estimativa com impostos e bandeira, e quanto fica a conta para 100, 200 ou 300 kWh.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), ("/conta-de-luz/", "Conta de luz"), (None, d.nome)]) }}
+<h1>Tarifa de energia da {{ d.nome }}</h1>
+<p class="lead">Tarifa residencial convencional (B1) homologada pela ANEEL, em vigor desde {{ d.vigencia|data_br("longa") }}.</p>
+
+<div class="placa">
+  <div class="placa-linha">
+    <span class="placa-nome">kWh sem impostos</span>
+    <span class="placa-preco"><small>R$</small>{{ d.kwh|num(3) }}</span>
+    <span class="placa-sub">{{ d.nome }}, {{ UFS[d.uf] }}</span>
+  </div>
+  <div class="placa-linha">
+    <span class="placa-nome">kWh na conta</span>
+    <span class="placa-preco"><small>R$</small>{{ d.kwh_final|num(3) }}</span>
+    <span class="placa-sub">estimativa com {{ energia.impostos }}% de impostos{% if atual %} e bandeira {{ atual.bandeira|lower }}{% endif %}</span>
+  </div>
+</div>
+
+<p>
+{% if energia.media %}
+{% set dif = (d.kwh / energia.media - 1) * 100 %}
+A tarifa da {{ d.nome }} está {% if dif|abs < 1 %}praticamente igual à{% elif dif < 0 %}{{ (-dif)|num(0) }}% abaixo da{% else %}{{ dif|num(0) }}% acima da{% endif %} média das principais distribuidoras do país ({{ energia.media|brl(3) }} por kWh).
+{% endif %}
+{% if d.posicao %}No ranking das {{ d.total }} principais, é a {{ d.posicao }}ª mais barata.{% endif %}
+</p>
+
+<h2>Quanto fica a conta na {{ d.nome }}</h2>
+<div class="tabela-rolagem">
+<table>
+  <thead><tr><th>Consumo no mês</th><th class="n">Sem impostos</th><th class="n">Estimativa na conta</th></tr></thead>
+  <tbody>
+  {% for k in (100, 150, 200, 300, 500) %}
+  <tr><td>{{ k }} kWh</td><td class="n">{{ (d.kwh * k)|brl }}</td><td class="n">{{ (d.kwh_final * k)|brl }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="nota">A estimativa não inclui a contribuição de iluminação pública, que varia por município. Uma casa típica brasileira consome perto de 150 a 200 kWh por mês.</p>
+<p><a class="botao" href="/conta-de-luz/?d={{ d.slug }}">Calcular o gasto de cada aparelho na {{ d.nome }}</a></p>
+
+{% if atual %}
+<h2>Bandeira tarifária do mês</h2>
+<p>Em {{ (atual.mes ~ "-01")|data_br("mes") }} vale a bandeira <strong>{{ atual.bandeira|lower }}</strong>{% if v %}, que acrescenta {{ v|brl(3) }} a cada 100 kWh na conta de todos os clientes da {{ d.nome }}{% else %}, sem cobrança extra{% endif %}.</p>
+{% endif %}
+
+{% if vizinhas %}
+<h2>Outras distribuidoras em {{ UFS[d.uf] }}</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Distribuidora</th><th class="n">kWh sem impostos</th></tr></thead>
+  <tbody>{% for o in vizinhas %}<tr><td><a href="{{ o.url }}">{{ o.nome }}</a></td><td class="n">{{ o.kwh|brl(3) }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+
+{{ mc.faq([
+  ("Quanto custa o kWh da " ~ d.nome ~ "?", "A tarifa residencial homologada pela ANEEL é de " ~ d.kwh|brl(3) ~ " por kWh, sem impostos, em vigor desde " ~ d.vigencia|data_br ~ ". Com impostos e bandeira, o valor na conta fica perto de " ~ d.kwh_final|brl(3) ~ "."),
+  ("Quando a tarifa da " ~ d.nome ~ " muda?", "Uma vez por ano, no reajuste aprovado pela ANEEL na data de aniversário do contrato de concessão, ou em revisões extraordinárias. Este site atualiza o valor automaticamente."),
+  ("A bandeira tarifária vale para a " ~ d.nome ~ "?", "Sim. A bandeira é definida pela ANEEL para todo o sistema interligado e aparece na conta de todas as distribuidoras conectadas a ele.")
+]) }}
+{% endblock %}

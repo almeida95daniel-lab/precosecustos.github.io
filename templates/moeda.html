@@ -1,47 +1,62 @@
 {% extends "base.html" %}
 {% import "_macros.html" as mc %}
-{% block titulo %}{{ nome }} hoje: {{ m.valor|brl(4) }} (cotação oficial do Banco Central) | {{ cfg.nome_site }}{% endblock %}
-{% block descricao %}Cotação do {{ nome|lower }} hoje pela PTAX do Banco Central: {{ m.valor|brl(4) }} em {{ m.data|data_br }}. Conversor de {{ codigo }} para real e gráfico do último ano.{% endblock %}
+{% set fem = m.codigo == "GBP" %}{% set do = "da" if fem else "do" %}{% set o = "a" if fem else "o" %}
+{% set rot = (m.unidade ~ " " ~ m.codigo) if m.unidade > 1 else ("1 " ~ m.codigo) %}
+{% block titulo %}{{ m.nome }} hoje: {{ m.valor|brl(4) }}{% if m.unidade > 1 %} por {{ m.unidade }}{% endif %} (cotação oficial) | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Cotação {{ do }} {{ m.nome|lower }} hoje em reais: {{ rot }} = {{ m.valor|brl(4) }} em {{ m.data|data_br }}. Conversor de {{ m.codigo }} para real, variação e gráfico do último ano.{% endblock %}
 {% block conteudo %}
-{{ mc.trilha([("/", "Início"), (None, nome ~ " hoje")]) }}
-<h1>Cotação do {{ nome|lower }} hoje</h1>
-<p class="lead">Taxa PTAX de venda divulgada pelo Banco Central em {{ m.data|data_br("longa") }}.</p>
+{{ mc.trilha([("/", "Início"), ("/moedas/", "Moedas"), (None, m.nome)]) }}
+<h1>Cotação {{ do }} {{ m.nome|lower }} hoje</h1>
+<p class="lead">Taxa de venda de {{ m.data|data_br("longa") }}. Fonte: {{ m.fonte }}.</p>
 <div class="placa">
   <div class="placa-linha">
-    <span class="placa-nome">1 {{ codigo }}</span>
+    <span class="placa-nome">{{ rot }}</span>
     <span class="placa-preco"><small>R$</small>{{ m.valor|num(4) }}</span>
     <span class="placa-sub">{{ m.var|seta }} no dia</span>
   </div>
+  {% if m.unidade == 1 %}
+  <div class="placa-linha">
+    <span class="placa-nome">R$ 1,00</span>
+    <span class="placa-preco" style="font-size:2rem">{{ (1 / m.taxa)|num(4) }}<small style="vertical-align:baseline;margin-left:6px">{{ m.codigo }}</small></span>
+    <span class="placa-sub">quanto compra um real</span>
+  </div>
+  {% endif %}
 </div>
+<p>{% if m.var30 is not none %}Em 30 dias, {{ o }} {{ m.nome|lower }} {{ "subiu" if m.var30 > 0 else "caiu" }} {{ m.var30|abs|num(1) }}% em relação ao real{% endif %}{% if m.var365 is not none %}; em 12 meses, {{ "subiu" if m.var365 > 0 else "caiu" }} {{ m.var365|abs|num(1) }}%{% endif %}.</p>
 
 <section class="calc" aria-labelledby="conv-t">
   <h2 id="conv-t" style="margin-top:0">Conversor</h2>
   <div class="campos">
-    <div class="campo"><label for="v-ext">Valor em {{ nome|lower }} ({{ simbolo }})</label><input id="v-ext" type="number" min="0" step="0.01" value="100" inputmode="decimal"></div>
+    <div class="campo"><label for="v-ext">Valor em {{ m.nome|lower }} ({{ m.simbolo }})</label><input id="v-ext" type="number" min="0" step="0.01" value="{{ 1000 if m.unidade > 1 else 100 }}" inputmode="decimal"></div>
     <div class="campo"><label for="v-brl">Valor em reais (R$)</label><input id="v-brl" type="number" min="0" step="0.01" inputmode="decimal"></div>
     <div class="campo"><label for="spread">Taxa do cartão ou casa de câmbio (%)</label><input id="spread" type="number" min="0" step="0.1" value="0" inputmode="decimal"><p class="ajuda">Cartões costumam somar 4% a 6%, mais IOF.</p></div>
   </div>
   <p class="nota" id="conv-nota" aria-live="polite"></p>
 </section>
 
-<h2>{{ nome }} no último ano</h2>
-{{ grafico(m.grafico, casas=4, titulo=nome ~ " PTAX venda, em reais, por dia útil") }}
+<h2>{{ m.nome }} no último ano</h2>
+{{ grafico(m.grafico, casas=4, titulo=m.nome ~ ", " ~ rot ~ " em reais, por dia útil") }}
+
+<h2>Outras moedas</h2>
+<ul class="lista-links">
+  {% for x in moedas if x.codigo != m.codigo %}<li><a href="{{ x.url }}">{{ x.nome }}</a><span class="meta">{{ x.valor|brl(4) }}</span></li>{% endfor %}
+</ul>
 
 {{ mc.faq([
-  ("O que é a PTAX?", "É a taxa de câmbio oficial calculada pelo Banco Central a partir das negociações do dia no mercado. Serve de referência para contratos e para a fatura de cartão de crédito em moeda estrangeira."),
-  ("Por que o " ~ nome|lower ~ " que eu compro é mais caro?", "Casas de câmbio, bancos e cartões cobram uma margem sobre a cotação, além do IOF. Use o campo de taxa do conversor para estimar o valor final."),
-  ("Quando a cotação é atualizada?", "Em todo dia útil. Este site busca o valor no Banco Central automaticamente.")
+  ("Quanto está " ~ o ~ " " ~ m.nome|lower ~ " hoje?", rot ~ " vale " ~ m.valor|brl(4) ~ " pela cotação de venda de " ~ m.data|data_br ~ "."),
+  ("Por que " ~ o ~ " " ~ m.nome|lower ~ " que eu compro é mais " ~ ("cara" if fem else "caro") ~ "?", "Casas de câmbio, bancos e cartões cobram uma margem sobre a cotação oficial, além do IOF. Use o campo de taxa do conversor para estimar o valor final."),
+  ("Quando a cotação é atualizada?", "Em todo dia útil. Este site busca o valor automaticamente.")
 ]) }}
 {% endblock %}
 {% block scripts %}
 <script>
 (function () {
-  var taxa = {{ m.valor }};
+  var taxa = {{ m.taxa }};
   var ext = document.getElementById("v-ext"), brl = document.getElementById("v-brl"), sp = document.getElementById("spread"), nota = document.getElementById("conv-nota");
   function t() { var s = BH.ler(sp); return taxa * (1 + (s > 0 ? s : 0) / 100); }
   function deExt() { var v = BH.ler(ext); brl.value = v >= 0 ? (v * t()).toFixed(2) : ""; info(); }
   function deBrl() { var v = BH.ler(brl); ext.value = v >= 0 ? (v / t()).toFixed(2) : ""; info(); }
-  function info() { nota.textContent = "Cotação usada: " + BH.brl(t(), 4) + " por {{ codigo }}."; }
+  function info() { nota.textContent = "Cotação usada: " + BH.brl(t(), 6).replace(/0+$/, "") + " por {{ m.codigo }}."; }
   ext.addEventListener("input", deExt); brl.addEventListener("input", deBrl); sp.addEventListener("input", deExt);
   deExt();
 })();

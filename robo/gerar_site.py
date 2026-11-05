@@ -236,6 +236,100 @@ def _acumular(taxas):
     return f
 
 
+# ================================================================ moedas
+def montar_moedas(bcb):
+    dados = (ler_json(DADOS / "moedas.json") or {}).get("moedas", {})
+    # reserva: dólar e euro da série do Banco Central já coletada
+    nomes = {"USD": ("Dólar americano", "US$", "dolar-hoje", "dolar"), "EUR": ("Euro", "€", "euro-hoje", "euro")}
+    for cod, (nome, simb, url, chave) in nomes.items():
+        if cod not in dados and bcb and bcb["series"].get(chave):
+            dados[cod] = {"nome": nome, "simbolo": simb, "url": url, "unidade": 1,
+                          "fonte": "PTAX/Banco Central", "pontos": bcb["series"][chave]}
+    saida = []
+    for cod, d in dados.items():
+        p = d["pontos"]
+        if len(p) < 2:
+            continue
+        u = d.get("unidade", 1)
+        data_ult, v = p[-1]
+        alvo = (date.fromisoformat(data_ult) - __import__("datetime").timedelta(days=30)).isoformat()
+        v30 = next((x for dd, x in reversed(p) if dd <= alvo), p[0][1])
+        alvo_ano = (date.fromisoformat(data_ult) - __import__("datetime").timedelta(days=365)).isoformat()
+        v365 = next((x for dd, x in reversed(p) if dd <= alvo_ano), None)
+        saida.append({
+            "codigo": cod, "nome": d["nome"], "simbolo": d["simbolo"], "unidade": u, "fonte": d.get("fonte", ""),
+            "url": f"/{d['url']}/", "data": data_ult, "valor": v * u, "taxa": v,
+            "var": variacao(v, p[-2][1]), "var30": variacao(v, v30), "var365": variacao(v, v365) if v365 else None,
+            "grafico": [(date.fromisoformat(dd).strftime("%d/%m/%y"), x * u) for dd, x in p[-260:]],
+        })
+    ordem = ["USD", "EUR", "GBP", "CHF", "JPY", "CNY", "CAD", "AUD", "ARS"]
+    saida.sort(key=lambda m: ordem.index(m["codigo"]) if m["codigo"] in ordem else 99)
+    return saida
+
+
+# ================================================================ dados da ANEEL
+RESERVA_BANDEIRAS = {"Verde": 0.0, "Amarela": 1.885, "Vermelha Patamar 1": 4.463, "Vermelha Patamar 2": 7.877}
+IMPOSTOS_ENERGIA = 25  # % estimado de ICMS + PIS/Cofins sobre a tarifa
+
+
+def _bandeira(nome):
+    from comum import normalizar
+    n = normalizar(nome)
+    if "ESCASSEZ" in n:
+        return "Escassez Hídrica"
+    if "VERMELHA" in n:
+        return "Vermelha Patamar 2" if "2" in n else "Vermelha Patamar 1"
+    if "AMARELA" in n:
+        return "Amarela"
+    if "VERDE" in n:
+        return "Verde"
+    return str(nome)
+
+
+def montar_energia(aneel):
+    from comum import normalizar
+    from distribuidoras import PRINCIPAIS
+    if not aneel:
+        return None
+    meses = [{"mes": b["mes"], "bandeira": _bandeira(b["bandeira"])} for b in aneel.get("bandeiras", [])]
+    adic = {_bandeira(k): v for k, v in (aneel.get("adicional_100kwh") or {}).items()}
+    adic.setdefault("Verde", 0.0)
+    if not (adic.get("Amarela", 0) < adic.get("Vermelha Patamar 1", 0) < adic.get("Vermelha Patamar 2", 0)):
+        adic = dict(RESERVA_BANDEIRAS)
+    atual = meses[-1] if meses else None
+    extra = (adic.get(atual["bandeira"], 0) / 100) if atual else 0  # R$ por kWh
+
+    limite = date(date.today().year - 2, date.today().month, 1).isoformat()
+    melhores = {}
+    for t in aneel.get("tarifas", []):
+        sig = str(t["distribuidora"]).strip()
+        chave_n = normalizar(sig)
+        if not sig or "NAO INFORMADO" in chave_n or t["vigencia"] < limite:
+            continue
+        if not (0.15 < t["kwh_sem_impostos"] < 2.5):
+            continue
+        if chave_n not in melhores or t["vigencia"] > melhores[chave_n]["vigencia"]:
+            melhores[chave_n] = t
+    lista = []
+    for chave_n, t in melhores.items():
+        nome, uf = PRINCIPAIS.get(chave_n, (t["distribuidora"], None))
+        kwh = t["kwh_sem_impostos"]
+        com = (kwh + extra) * (1 + IMPOSTOS_ENERGIA / 100)
+        d = {"sigla": t["distribuidora"], "nome": nome, "uf": uf, "principal": chave_n in PRINCIPAIS,
+             "vigencia": t["vigencia"], "kwh": kwh, "kwh_final": round(com, 4), "slug": slug(nome)}
+        d["url"] = f"/conta-de-luz/{d['slug']}/" if d["principal"] else None
+        lista.append(d)
+    principais = sorted([d for d in lista if d["principal"]], key=lambda d: (d["uf"], d["nome"]))
+    outras = sorted([d for d in lista if not d["principal"]], key=lambda d: d["nome"].lower())
+    media = round(sum(d["kwh"] for d in principais) / len(principais), 5) if principais else None
+    ranking = sorted(principais, key=lambda d: d["kwh"])
+    for i, d in enumerate(ranking, 1):
+        d["posicao"], d["total"] = i, len(ranking)
+    return {"meses": meses, "atual": atual, "adicional": adic, "extra_kwh": extra, "impostos": IMPOSTOS_ENERGIA,
+            "principais": principais, "outras": outras, "media": media, "ranking": ranking,
+            "oficial": bool(aneel.get("adicional_oficial"))}
+
+
 # ================================================================ geração
 def main():
     if SAIDA.exists():
@@ -251,6 +345,8 @@ def main():
     comb = montar_combustiveis()
     bcb = montar_bcb()
     aneel = ler_json(DADOS / "aneel.json") or {}
+    energia = montar_energia(aneel)
+    moedas = montar_moedas(bcb)
     hoje = date.today().isoformat()
 
     env = Environment(loader=FileSystemLoader(RAIZ / "templates"), autoescape=select_autoescape(["html"]),
@@ -258,7 +354,7 @@ def main():
     env.filters.update(brl=brl, num=num, data_br=data_br, seta=seta, json=lambda o: Markup(json.dumps(o, ensure_ascii=False)))
     env.globals.update(cfg=CONFIG, PRODUTOS=PRODUTOS, UFS=UFS, grafico=grafico, serie_semanal=serie_semanal,
                        comb=comb, bcb=bcb, aneel=aneel, ano=date.today().year, regra=CONFIG["regra_etanol"],
-                       tem_energia=bool(aneel.get("bandeiras") or aneel.get("tarifas")))
+                       tem_energia=bool(energia and (energia["atual"] or energia["principais"])), energia=energia, moedas=moedas)
     mapa = []
     prefixo = CONFIG.get("caminho_base", "").rstrip("/")
 
@@ -293,10 +389,6 @@ def main():
                                   key=lambda o: o["produtos"]["gasolina"]["medio"])[:6]
                 pagina(c["url"], "comb_cidade.html", 0.8, c=c, est=est, vizinhas=vizinhas)
     if bcb:
-        if bcb.get("dolar"):
-            pagina("/dolar-hoje/", "moeda.html", 0.9, m=bcb["dolar"], nome="Dólar", simbolo="US$", codigo="USD")
-        if bcb.get("euro"):
-            pagina("/euro-hoje/", "moeda.html", 0.8, m=bcb["euro"], nome="Euro", simbolo="€", codigo="EUR")
         tem = lambda k: bcb.get(k, {}).get("valor") is not None
         if tem("selic"):
             pagina("/selic-hoje/", "indicador.html", 0.8, ind="selic")
@@ -308,10 +400,17 @@ def main():
             pagina("/calculadoras/rendimento/", "calc_rendimento.html", 0.8)
         if bcb["series"].get("ipca"):
             pagina("/calculadoras/corrigir-pela-inflacao/", "calc_inflacao.html", 0.8)
+    if moedas:
+        pagina("/moedas/", "moedas.html", 0.9)
+        for m in moedas:
+            pagina(m["url"], "moeda.html", 0.8, m=m)
     if comb:
         pagina("/calculadoras/custo-da-viagem/", "calc_viagem.html", 0.7)
     if env.globals["tem_energia"]:
         pagina("/conta-de-luz/", "energia.html", 0.8)
+        for d in energia["principais"]:
+            vizinhas = [o for o in energia["principais"] if o["uf"] == d["uf"] and o is not d]
+            pagina(d["url"], "energia_dist.html", 0.7, d=d, vizinhas=vizinhas)
     pagina("/calculadoras/", "calculadoras.html", 0.7)
     pagina("/sobre/", "sobre.html", 0.3)
     pagina("/privacidade/", "privacidade.html", 0.2)

@@ -1,39 +1,43 @@
 {% extends "base.html" %}
 {% import "_macros.html" as mc %}
-{% set atual = aneel.bandeiras[-1] if aneel.bandeiras else None %}
-{% block titulo %}Bandeira tarifária{% if atual %} de {{ (atual.mes ~ "-01")|data_br("mes") }}: {{ atual.bandeira }}{% endif %} e calculadora da conta de luz | {{ cfg.nome_site }}{% endblock %}
-{% block descricao %}Bandeira tarifária do mês, quanto ela acrescenta na conta e calculadora do consumo de cada aparelho com a tarifa da sua distribuidora. Dados da ANEEL.{% endblock %}
+{% set atual = energia.atual %}
+{% block titulo %}Conta de luz: bandeira tarifária{% if atual %} de {{ (atual.mes ~ "-01")|data_br("mes") }} ({{ atual.bandeira }}){% endif %} e tarifa da sua distribuidora | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Bandeira tarifária do mês, tarifa residencial de Celesc, Copel, Cemig, Enel, Light, CPFL, Neoenergia, Equatorial, Energisa e outras, e calculadora de consumo por aparelho. Dados da ANEEL.{% endblock %}
 {% block conteudo %}
 {{ mc.trilha([("/", "Início"), (None, "Conta de luz")]) }}
-<h1>Conta de luz: bandeira do mês e quanto gasta cada aparelho</h1>
+<h1>Conta de luz: bandeira do mês e tarifa da sua distribuidora</h1>
+<p class="lead">Quanto custa o kWh na sua região, quanto a bandeira acrescenta e quanto gasta cada aparelho. Dados oficiais da ANEEL.</p>
+
 {% if atual %}
-{% set adic = aneel.adicional_100kwh %}
+{% set v = energia.adicional.get(atual.bandeira, 0) %}
 <div class="placa">
   <div class="placa-linha">
     <span class="placa-nome">Bandeira de {{ (atual.mes ~ "-01")|data_br("mes") }}</span>
     <span class="placa-preco" style="font-size:2.2rem">{{ atual.bandeira }}</span>
-    <span class="placa-sub">{% set v = adic.get(atual.bandeira) %}{% if v %}acréscimo de {{ v|brl(3) }} a cada 100 kWh{% else %}sem acréscimo na conta{% endif %}</span>
+    <span class="placa-sub">{% if v %}acréscimo de {{ v|brl(3) }} a cada 100 kWh{% else %}sem acréscimo na conta{% endif %}</span>
   </div>
 </div>
-<p>Uma casa que consome 200 kWh por mês paga {% set v = adic.get(atual.bandeira) or 0 %}{{ (v*2)|brl }} a mais neste mês por causa da bandeira, antes dos impostos.</p>
-{% if aneel.bandeiras|length > 1 %}
-<h2>Bandeiras dos últimos meses</h2>
-<div class="tabela-rolagem"><table>
-  <thead><tr><th>Mês</th><th>Bandeira</th><th class="n">Acréscimo por 100 kWh</th></tr></thead>
-  <tbody>{% for b in aneel.bandeiras|reverse %}<tr><td>{{ (b.mes ~ "-01")|data_br("mes") }}</td><td>{{ b.bandeira }}</td><td class="n">{{ (adic.get(b.bandeira) or 0)|brl(3) }}</td></tr>{% endfor %}</tbody>
-</table></div>
-{% if not aneel.adicional_oficial %}<p class="nota">Valores de acréscimo de referência da ANEEL; confira a tabela vigente no site da agência.</p>{% endif %}
-{% endif %}
+<p>{% if v %}Uma casa que consome 200 kWh paga {{ (v*2)|brl }} a mais neste mês por causa da bandeira, antes dos impostos.{% else %}Com bandeira verde, não há cobrança extra neste mês.{% endif %}</p>
 {% endif %}
 
 <h2>Calculadora de consumo</h2>
 <section class="calc">
   <div class="campos">
-    {% if aneel.tarifas %}
-    <div class="campo"><label for="dist">Sua distribuidora</label><select id="dist"><option value="">Escolha</option>{% for t in aneel.tarifas %}<option value="{{ t.kwh_sem_impostos }}">{{ t.distribuidora }}</option>{% endfor %}</select></div>
-    {% endif %}
-    <div class="campo"><label for="tarifa">Tarifa por kWh, sem impostos (R$)</label><input id="tarifa" type="number" min="0" step="0.001" value="0.80" inputmode="decimal"></div>
-    <div class="campo"><label for="imp">Impostos e taxas (%)</label><input id="imp" type="number" min="0" step="1" value="25" inputmode="decimal"><p class="ajuda">ICMS, PIS e Cofins somam de 20% a 35%, conforme o estado.</p></div>
+    <div class="campo"><label for="dist">Sua distribuidora</label>
+      <select id="dist">
+        <option value="">Escolha</option>
+        <optgroup label="Principais distribuidoras">
+          {% for d in energia.principais %}<option value="{{ d.kwh }}" data-slug="{{ d.slug }}">{{ d.nome }} ({{ d.uf }})</option>{% endfor %}
+        </optgroup>
+        {% if energia.outras %}
+        <optgroup label="Cooperativas e outras distribuidoras">
+          {% for d in energia.outras %}<option value="{{ d.kwh }}">{{ d.nome }}</option>{% endfor %}
+        </optgroup>
+        {% endif %}
+      </select>
+    </div>
+    <div class="campo"><label for="tarifa">Tarifa por kWh, sem impostos (R$)</label><input id="tarifa" type="number" min="0" step="0.001" value="{{ (energia.media or 0.7)|round(3) }}" inputmode="decimal"><p class="ajuda" id="tarifa-origem">Média das principais distribuidoras.</p></div>
+    <div class="campo"><label for="imp">Impostos e taxas (%)</label><input id="imp" type="number" min="0" step="1" value="{{ energia.impostos }}" inputmode="decimal"><p class="ajuda">ICMS, PIS e Cofins somam de 20% a 35%, conforme o estado.</p></div>
     <div class="campo"><label for="ap">Aparelho</label><select id="ap">
       <option value="5500|0.25">Chuveiro elétrico (15 min/dia)</option>
       <option value="1000|8">Ar-condicionado 9.000 BTU inverter (8 h/dia)</option>
@@ -51,12 +55,50 @@
   </div>
   <div class="resultado" aria-live="polite"><div class="resultado-grande" id="res"></div><p class="nota" id="det"></p></div>
 </section>
+
+{% if energia.principais %}
+<h2>Tarifa residencial por distribuidora</h2>
+<p>Valor do kWh na tarifa convencional residencial (B1), homologado pela ANEEL. A coluna "Na conta" estima o preço final com {{ energia.impostos }}% de impostos{% if energia.extra_kwh %} e a bandeira atual{% endif %}.</p>
+<div class="tabela-rolagem">
+<table>
+  <thead><tr><th>Distribuidora</th><th>UF</th><th class="n">kWh sem impostos</th><th class="n">Na conta (estimativa)</th><th class="n">Vigente desde</th></tr></thead>
+  <tbody>
+  {% for d in energia.principais %}
+  <tr><td><a href="{{ d.url }}">{{ d.nome }}</a></td><td>{{ d.uf }}</td><td class="n">{{ d.kwh|brl(3) }}</td><td class="n">{{ d.kwh_final|brl(3) }}</td><td class="n">{{ d.vigencia|data_br }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% if energia.outras %}
+<details class="g-tabela"><summary>Ver cooperativas e outras {{ energia.outras|length }} distribuidoras</summary>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Distribuidora (sigla ANEEL)</th><th class="n">kWh sem impostos</th><th class="n">Vigente desde</th></tr></thead>
+  <tbody>{% for d in energia.outras %}<tr><td>{{ d.nome }}</td><td class="n">{{ d.kwh|brl(3) }}</td><td class="n">{{ d.vigencia|data_br }}</td></tr>{% endfor %}</tbody>
+</table></div>
+</details>
+{% endif %}
+{% endif %}
+
+{% if energia.meses|length > 1 %}
+<h2>Bandeiras dos últimos meses</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Mês</th><th>Bandeira</th><th class="n">Acréscimo por 100 kWh</th></tr></thead>
+  <tbody>{% for b in energia.meses|reverse %}<tr><td>{{ (b.mes ~ "-01")|data_br("mes") }}</td><td>{{ b.bandeira }}</td><td class="n">{{ (energia.adicional.get(b.bandeira) or 0)|brl(3) }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% if not energia.oficial %}<p class="nota">Acréscimos pela tabela de referência da ANEEL; confira a tabela vigente no site da agência.</p>{% endif %}
+{% endif %}
+
+{{ mc.faq([
+  ("O que é a bandeira tarifária?", "É um sinal mensal da ANEEL sobre o custo de gerar energia. Na verde não há cobrança extra; na amarela e na vermelha, cada 100 kWh consumidos ficam mais caros."),
+  ("Por que a minha conta é mais cara que a tarifa da tabela?", "A tabela mostra a tarifa sem impostos. Na conta entram ICMS, PIS, Cofins, a contribuição de iluminação pública e a bandeira do mês."),
+  ("Qual aparelho mais pesa na conta?", "Em geral o chuveiro elétrico e o ar-condicionado. Use a calculadora para ver o custo mensal de cada um com a tarifa da sua distribuidora.")
+]) }}
 {% endblock %}
 {% block scripts %}
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var adic = {{ ((aneel.adicional_100kwh or {}).get(atual.bandeira if atual else "", 0) or 0)|json }} / 100;
+  var adic = {{ energia.extra_kwh|json }};
   function aparelho() { var p = $("ap").value.split("|"); $("pot").value = p[0]; $("horas").value = p[1]; calc(); }
   function calc() {
     var w = BH.ler($("pot")), h = BH.ler($("horas")), d = BH.ler($("dias")), t = BH.ler($("tarifa")), imp = BH.ler($("imp")) || 0;
@@ -65,9 +107,16 @@
     $("res").textContent = BH.brl(custo) + " por mês";
     $("det").textContent = BH.num(kwh, 1) + " kWh no mês" + (adic ? ", já com a bandeira atual" : "") + ". Em um ano: " + BH.brl(custo * 12) + ".";
   }
-  if ($("dist")) $("dist").addEventListener("change", function () { if (this.value) { $("tarifa").value = (+this.value).toFixed(3); calc(); } });
+  function escolher() {
+    var op = $("dist").selectedOptions[0];
+    if (op && op.value) { $("tarifa").value = (+op.value).toFixed(3); $("tarifa-origem").textContent = "Tarifa da " + op.textContent + "."; }
+    calc();
+  }
+  $("dist").addEventListener("change", escolher);
   $("ap").addEventListener("change", aparelho);
   ["tarifa", "imp", "pot", "horas", "dias"].forEach(function (id) { $(id).addEventListener("input", calc); });
+  var pedida = new URLSearchParams(location.search).get("d");
+  if (pedida) { var op = document.querySelector('#dist option[data-slug="' + pedida.replace(/[^a-z0-9-]/g, "") + '"]'); if (op) { op.selected = true; escolher(); } }
   aparelho();
 })();
 </script>

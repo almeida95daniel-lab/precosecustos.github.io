@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% set usd = moedas[0] %}
+{% block titulo %}Moedas internacionais hoje: dólar, euro, libra, iene e mais em reais | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Cotação de hoje do dólar ({{ usd.valor|brl(4) }}), euro, libra, franco suíço, iene, yuan, dólar canadense, dólar australiano e peso argentino em reais, com conversor e variação.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), (None, "Moedas")]) }}
+<h1>Moedas internacionais hoje</h1>
+<p class="lead">Quanto vale cada moeda em reais, pela cotação oficial de venda. Atualizado todo dia útil.</p>
+
+<div class="tabela-rolagem">
+<table>
+  <thead><tr><th>Moeda</th><th class="n">Em reais</th><th>No dia</th><th class="n">30 dias</th><th class="n">12 meses</th></tr></thead>
+  <tbody>
+  {% for m in moedas %}
+  <tr>
+    <td><a href="{{ m.url }}">{{ m.nome }}</a><br><span class="meta">{% if m.unidade > 1 %}{{ m.unidade }} {% endif %}{{ m.codigo }}</span></td>
+    <td class="n"><strong>{{ m.valor|brl(4) }}</strong></td>
+    <td>{{ m.var|seta }}</td>
+    <td class="n">{% if m.var30 is not none %}{{ "+" if m.var30 > 0 else "" }}{{ m.var30|num(1) }}%{% else %}–{% endif %}</td>
+    <td class="n">{% if m.var365 is not none %}{{ "+" if m.var365 > 0 else "" }}{{ m.var365|num(1) }}%{% else %}–{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="nota">Cotações de {{ usd.data|data_br }}. Fonte: {{ usd.fonte }}{% for m in moedas if m.fonte != usd.fonte %}{% if loop.first %}; algumas moedas pelo Banco Central Europeu{% endif %}{% endfor %}.</p>
+
+<section class="calc" aria-labelledby="conv-t">
+  <h2 id="conv-t" style="margin-top:0">Conversor de moedas</h2>
+  <div class="campos">
+    <div class="campo"><label for="valor">Valor</label><input id="valor" type="number" min="0" step="0.01" value="100" inputmode="decimal"></div>
+    <div class="campo"><label for="de">De</label><select id="de"><option value="BRL">Real (R$)</option>{% for m in moedas %}<option value="{{ m.codigo }}"{% if loop.first %} selected{% endif %}>{{ m.nome }} ({{ m.codigo }})</option>{% endfor %}</select></div>
+    <div class="campo"><label for="para">Para</label><select id="para"><option value="BRL" selected>Real (R$)</option>{% for m in moedas %}<option value="{{ m.codigo }}">{{ m.nome }} ({{ m.codigo }})</option>{% endfor %}</select></div>
+    <div class="campo"><label for="spread">Taxa do cartão ou casa de câmbio (%)</label><input id="spread" type="number" min="0" step="0.1" value="0" inputmode="decimal"><p class="ajuda">Cartões costumam somar 4% a 6%, mais IOF.</p></div>
+  </div>
+  <div class="resultado" aria-live="polite"><div class="resultado-grande" id="res"></div><p class="nota" id="det"></p></div>
+</section>
+
+{{ mc.faq([
+  ("De onde vêm as cotações?", "Da PTAX, a taxa de câmbio oficial calculada pelo Banco Central do Brasil a partir dos negócios do dia. Quando ela não está disponível para alguma moeda, usamos a taxa de referência do Banco Central Europeu convertida para reais."),
+  ("Por que o valor que eu pago é maior?", "Bancos, casas de câmbio e cartões cobram uma margem sobre a cotação oficial, além do IOF. Use o campo de taxa do conversor para estimar o custo final."),
+  ("Qual a moeda mais valorizada da lista?", "Em valor por unidade, a libra esterlina costuma ser a mais cara em reais, seguida pelo franco suíço e pelo euro.")
+]) }}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var T = {BRL: 1{% for m in moedas %}, {{ m.codigo }}: {{ m.taxa }}{% endfor %}};
+  var $ = function (id) { return document.getElementById(id); };
+  function calc() {
+    var v = BH.ler($("valor")), de = $("de").value, para = $("para").value, s = BH.ler($("spread")) || 0;
+    if (!(v >= 0)) return;
+    var emReais = v * T[de], r = emReais / T[para];
+    if (de !== para && (de === "BRL" || para === "BRL")) r = de === "BRL" ? r / (1 + s / 100) : r * (1 + s / 100);
+    var fmt = function (x, c) { return para === "BRL" ? BH.brl(x) : BH.num(x, 2) + " " + c; };
+    $("res").textContent = fmt(r, para);
+    $("det").textContent = "1 " + de + " = " + (T[de] / T[para]).toLocaleString("pt-BR", { maximumFractionDigits: 6 }) + " " + para + (s ? ", já com " + BH.num(s, 1) + "% de taxa." : ".");
+  }
+  ["valor", "de", "para", "spread"].forEach(function (id) { $(id).addEventListener("input", calc); });
+  calc();
+})();
+</script>
+{% endblock %}
