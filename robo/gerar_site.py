@@ -277,6 +277,50 @@ def exemplos_trabalho(R):
     return linhas
 
 
+# ================================================================ quanto rende
+VALORES_RENDE = [1000, 2000, 5000, 10000, 20000, 30000, 50000, 100000, 200000, 500000, 1000000]
+PRAZOS_RENDE = [(1, "1 mês"), (6, "6 meses"), (12, "1 ano"), (24, "2 anos"), (60, "5 anos")]
+
+
+def _aliquota_ir(meses):
+    dias = meses * 30
+    return 0.225 if dias <= 180 else 0.20 if dias <= 360 else 0.175 if dias <= 720 else 0.15
+
+
+def _mensal(anual):
+    return (1 + anual / 100) ** (1 / 12) - 1
+
+
+def simular_rende(valor, meses, bcb):
+    """Rendimento líquido (sem aportes) de cada aplicação, com as taxas de hoje."""
+    cdi, selic, poup = bcb["cdi"]["valor"], bcb["selic"]["valor"], bcb["poupanca"]["valor"]
+    saida = []
+    for nome, taxa_m, ir, custodia in (
+        ("Poupança", poup / 100, False, False),
+        ("CDB 100% do CDI", _mensal(cdi), True, False),
+        ("LCI/LCA 90% do CDI", _mensal(cdi * 0.9), False, False),
+        ("Tesouro Selic", _mensal(selic), True, True),
+    ):
+        bruto = valor * ((1 + taxa_m) ** meses - 1)
+        if custodia:
+            bruto -= max(0, valor - 10000) * 0.002 * meses / 12
+        liquido = bruto * (1 - _aliquota_ir(meses)) if ir else bruto
+        saida.append({"nome": nome, "ganho": round(liquido, 2), "total": round(valor + liquido, 2)})
+    melhor = max(saida, key=lambda x: x["ganho"])
+    for s in saida:
+        s["melhor"] = s is melhor
+    return saida
+
+
+def nome_valor(v):
+    if v >= 1000000:
+        n = v // 1000000
+        return f"{n} milhão" if n == 1 else f"{n} milhões"
+    if v >= 1000:
+        return f"{v // 1000} mil"
+    return str(v)
+
+
 # ================================================================ moedas
 def montar_moedas(bcb):
     dados = (ler_json(DADOS / "moedas.json") or {}).get("moedas", {})
@@ -421,6 +465,7 @@ def main():
                        **{p: round(d["medio"], 2) for p, d in c["produtos"].items() if p in ("gasolina", "etanol", "diesel_s10", "diesel", "gnv")}}
                       for c in comb["cidades"]]
     env.globals["cidades_js"] = cidades_js
+    env.globals["rendes"] = []
 
     pagina("/", "inicio.html", 1.0)
     if comb:
@@ -442,8 +487,21 @@ def main():
             pagina("/ipca-inflacao/", "indicador.html", 0.8, ind="ipca")
         if tem("cdi") and tem("selic"):
             pagina("/calculadoras/rendimento/", "calc_rendimento.html", 0.8)
+        if tem("cdi") and tem("selic") and tem("poupanca"):
+            rendes = []
+            for v in VALORES_RENDE:
+                url = f"/quanto-rende/{slug(nome_valor(v))}-reais/"
+                rendes.append({"valor": v, "nome": nome_valor(v), "url": url})
+            env.globals["rendes"] = rendes
+            env.globals["simular"] = lambda v, m: simular_rende(v, m, bcb)
+            for r in rendes:
+                tabela = [(rot, m, simular_rende(r["valor"], m, bcb)) for m, rot in PRAZOS_RENDE]
+                pagina(r["url"], "quanto_rende.html", 0.7, r=r, tabela=tabela)
+            pagina("/quanto-rende/", "quanto_rende_indice.html", 0.8)
         if bcb["series"].get("ipca"):
             pagina("/calculadoras/corrigir-pela-inflacao/", "calc_inflacao.html", 0.8)
+    if comb and comb["brasil"]["produtos"].get("glp"):
+        pagina("/gas-de-cozinha/", "gas.html", 0.9)
     if moedas:
         pagina("/moedas/", "moedas.html", 0.9)
         for m in moedas:

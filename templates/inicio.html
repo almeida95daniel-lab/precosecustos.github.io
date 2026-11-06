@@ -7,7 +7,7 @@
 <p class="lead">Preços médios de {{ comb.cidades|length }} cidades, da pesquisa oficial da ANP de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}.</p>
 {{ m.busca() }}
 {{ m.placa(comb.brasil.produtos, rodape="Média do Brasil. Variação em relação à semana anterior.", ordem=["gasolina", "etanol", "diesel_s10", "glp"]) }}
-<p><a href="/combustivel/">Ver todos os estados e cidades</a> ou <a href="/combustivel/etanol-ou-gasolina/">descobrir se o etanol compensa</a>.</p>
+<p><a href="/combustivel/">Ver todos os estados e cidades</a>, <a href="/combustivel/etanol-ou-gasolina/">descobrir se o etanol compensa</a> ou ver o <a href="/gas-de-cozinha/">preço do gás de cozinha</a>.</p>
 {% else %}
 <p class="lead">Os dados de combustível aparecem aqui assim que o robô concluir a primeira coleta da ANP.</p>
 {% endif %}
@@ -29,6 +29,7 @@
 <ul>
   {% if regras %}<li><a href="/calculadoras/decimo-terceiro/">13º salário {{ regras.ano }}</a>: o valor líquido da 1ª e da 2ª parcela.</li>
   <li><a href="/calculadoras/salario-liquido/">Salário líquido</a>: quanto sobra depois do INSS e do Imposto de Renda.</li>{% endif %}
+  {% if bcb %}<li><a href="/quanto-rende/">Quanto rende</a>: R$ 1 mil, 10 mil, 100 mil na poupança e no CDB, por mês.</li>{% endif %}
   {% if comb %}<li><a href="/combustivel/etanol-ou-gasolina/">Etanol ou gasolina</a>: descubra qual sai mais barato para o seu carro.</li>
   <li><a href="/calculadoras/custo-da-viagem/">Custo da viagem</a>: quanto vai gastar de combustível com o preço da sua cidade.</li>{% endif %}
   {% if bcb %}<li><a href="/calculadoras/rendimento/">Poupança, CDB ou Tesouro</a>: quanto rende o seu dinheiro em cada um, já com imposto.</li>

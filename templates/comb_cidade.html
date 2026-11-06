@@ -88,6 +88,12 @@
 </div>
 <p class="nota">Quer o custo de uma viagem? Use a <a href="/calculadoras/custo-da-viagem/">calculadora de custo da viagem</a>.</p>
 
+{{ m.afiliados("Para gastar menos combustível", [
+  ("Calibrador de pneus digital", "calibrador de pneu digital", "pneu murcho aumenta o consumo; calibrar toda semana economiza"),
+  ("Compressor de ar portátil 12 V", "compressor de ar portatil 12v carro", "calibra em casa, sem fila no posto"),
+  ("Scanner OBD2 Bluetooth", "scanner obd2 bluetooth", "mostra o consumo real do carro no celular")
+]) }}
+
 {% if vizinhas %}
 <h2>Gasolina mais barata em {{ est.nome }}</h2>
 <div class="tabela-rolagem">

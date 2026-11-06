@@ -8,6 +8,7 @@
 <h1>Preço dos combustíveis no Brasil</h1>
 <p class="lead">Média nacional da pesquisa da ANP de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}. Procure sua cidade para ver os postos mais baratos.</p>
 {{ m.busca() }}
+<p>Procurando o botijão? Veja o <a href="/gas-de-cozinha/">preço do gás de cozinha por estado</a>.</p>
 {{ m.placa(comb.brasil.produtos, rodape="Média do Brasil. Variação em relação à semana anterior.") }}
 
 {% set ests = comb.estados.values()|selectattr("produtos.gasolina", "defined")|sort(attribute="produtos.gasolina.medio")|list %}

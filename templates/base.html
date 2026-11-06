@@ -19,6 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/estilo.css">
 {% if cfg.adsense_cliente %}
+<meta name="google-adsense-account" content="{{ cfg.adsense_cliente }}">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ cfg.adsense_cliente }}" crossorigin="anonymous"></script>
 {% endif %}
 {% if cfg.google_analytics %}

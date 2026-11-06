@@ -185,3 +185,9 @@ button:hover { opacity: .9; }
 
 .so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ---------- afiliados */
+.afiliados { border-top: 1px solid var(--linha); margin-top: 40px; }
+.afiliados ul { padding-left: 1.2em; }
+.afiliados li { margin: 6px 0; }
+@media (max-width: 480px) { .some-celular { display: none; } }

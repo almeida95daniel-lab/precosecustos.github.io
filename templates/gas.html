@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% set br = comb.brasil.produtos.glp %}
+{% set ests = comb.estados.values()|selectattr("produtos.glp", "defined")|sort(attribute="produtos.glp.medio")|list %}
+{% set cgs = comb.cidades|selectattr("produtos.glp", "defined")|sort(attribute="produtos.glp.medio")|list %}
+{% block titulo %}Preço do gás de cozinha hoje: botijão de 13 kg a {{ br.medio|brl }} | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Preço médio do botijão de gás (GLP 13 kg) no Brasil, em cada estado e nas cidades pesquisadas pela ANP. Onde o gás está mais barato e mais caro nesta semana.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), ("/combustivel/", "Combustível"), (None, "Gás de cozinha")]) }}
+<h1>Preço do gás de cozinha</h1>
+<p class="lead">Botijão de 13 kg (GLP), pela pesquisa da ANP de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}.</p>
+
+<div class="placa">
+  <div class="placa-linha">
+    <span class="placa-nome">Média do Brasil</span>
+    <span class="placa-preco"><small>R$</small>{{ br.medio|num(2) }}</span>
+    <span class="placa-sub">por botijão de 13 kg{% if br.var is not none %}&ensp;{{ br.var|seta }}{% endif %}</span>
+  </div>
+  {% if ests %}
+  <div class="placa-linha">
+    <span class="placa-nome">Mais barato: {{ ests[0].nome }}</span>
+    <span class="placa-preco"><small>R$</small>{{ ests[0].produtos.glp.medio|num(2) }}</span>
+    <span class="placa-sub">média estadual</span>
+  </div>
+  {% endif %}
+</div>
+{% if br.minimo and br.maximo %}<p>Nesta semana a ANP encontrou o botijão de {{ br.minimo|brl }} a {{ br.maximo|brl }} no país: uma diferença de {{ (br.maximo - br.minimo)|brl }} por botijão.</p>{% endif %}
+
+<h2>Preço do botijão por estado</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Estado</th><th class="n">Preço médio</th><th class="n">Mínimo</th><th class="n">Máximo</th></tr></thead>
+  <tbody>{% for e in ests %}<tr><td><a href="{{ e.url }}">{{ e.nome }}</a></td><td class="n">{{ e.produtos.glp.medio|brl }}</td><td class="n">{{ e.produtos.glp.minimo|brl }}</td><td class="n">{{ e.produtos.glp.maximo|brl }}</td></tr>{% endfor %}</tbody>
+</table></div>
+
+{% if cgs %}
+<h2>As 15 cidades com o gás mais barato</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Cidade</th><th class="n">Botijão 13 kg</th></tr></thead>
+  <tbody>{% for c in cgs[:15] %}<tr><td><a href="{{ c.url }}">{{ c.nome }} ({{ c.uf }})</a></td><td class="n">{{ c.produtos.glp.medio|brl }}</td></tr>{% endfor %}</tbody>
+</table></div>
+<h2>As 15 cidades com o gás mais caro</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Cidade</th><th class="n">Botijão 13 kg</th></tr></thead>
+  <tbody>{% for c in cgs[-15:]|reverse %}<tr><td><a href="{{ c.url }}">{{ c.nome }} ({{ c.uf }})</a></td><td class="n">{{ c.produtos.glp.medio|brl }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+
+{% set hist = serie_semanal(comb.brasil.serie, "glp") %}
+{% if hist|length > 1 %}
+<h2>Evolução do preço do gás</h2>
+{{ grafico(hist, titulo="Botijão de 13 kg, média nacional") }}
+{% endif %}
+
+{{ mc.faq([
+  ("Quanto custa o botijão de gás hoje?", "Na pesquisa mais recente da ANP, o botijão de 13 kg custou em média " ~ br.medio|brl ~ " no Brasil."),
+  ("Onde o gás de cozinha é mais barato?", (ests[0].nome ~ " tem a menor média estadual nesta semana, " ~ ests[0].produtos.glp.medio|brl ~ ".") if ests else "Veja a tabela por estado."),
+  ("Por que o preço muda tanto de uma cidade para outra?", "O preço final inclui o valor da Petrobras, impostos estaduais, frete e a margem de cada revenda. Cidades mais distantes das bases de distribuição costumam pagar mais."),
+  ("O preço inclui entrega?", "A ANP pesquisa o preço na revenda. A entrega em casa pode custar mais.")
+]) }}
+{% endblock %}

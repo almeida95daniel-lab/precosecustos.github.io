@@ -57,3 +57,17 @@
 </div>
 {% endif %}
 {% endmacro %}
+
+{% macro afiliados(titulo, itens) %}
+{% if cfg.amazon_tag %}
+<section class="afiliados">
+  <h2>{{ titulo }}</h2>
+  <ul>
+    {% for nome, busca, por_que in itens %}
+    <li><a href="https://www.amazon.com.br/s?k={{ busca|urlencode }}&tag={{ cfg.amazon_tag }}" rel="sponsored nofollow noopener" target="_blank">{{ nome }}</a>: {{ por_que }}</li>
+    {% endfor %}
+  </ul>
+  <p class="nota">Links de afiliado: se você comprar por eles, o {{ cfg.nome_site }} pode receber uma comissão, sem custo extra para você.</p>
+</section>
+{% endif %}
+{% endmacro %}

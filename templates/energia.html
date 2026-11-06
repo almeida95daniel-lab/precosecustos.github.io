@@ -79,6 +79,12 @@
 {% endif %}
 {% endif %}
 
+{{ mc.afiliados("Para economizar na conta de luz", [
+  ("Tomada inteligente com medidor de consumo", "tomada inteligente medidor de consumo", "mostra quanto cada aparelho gasta de verdade"),
+  ("Lâmpadas LED", "lampada led bulbo kit", "gastam até 80% menos que as incandescentes"),
+  ("Timer digital de tomada", "timer digital tomada", "desliga aparelhos sozinho no horário certo")
+]) }}
+
 {% if energia.meses|length > 1 %}
 <h2>Bandeiras dos últimos meses</h2>
 <div class="tabela-rolagem"><table>

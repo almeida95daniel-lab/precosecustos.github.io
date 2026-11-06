@@ -5,9 +5,11 @@
   "caminho_base": "/precosecustos.github.io",
   "dominio_proprio": "",
   "email_contato": "contatobolsohoje@gmail.com",
-  "adsense_cliente": "",
+  "adsense_cliente": "ca-pub-8099658402436905",
   "google_analytics": "",
   "google_verificacao": "",
   "semanas_iniciais_anp": 12,
-  "regra_etanol": 0.7
+  "regra_etanol": 0.7,
+  "amazon_tag": "",
+  "mercadolivre_link": ""
 }

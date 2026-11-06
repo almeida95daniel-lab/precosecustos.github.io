@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% set mes = tabela[0][2] %}
+{% set poup = mes|selectattr("nome", "equalto", "Poupança")|first %}
+{% set melhor = mes|selectattr("melhor")|first %}
+{% block titulo %}Quanto rende {{ r.nome }} reais na poupança e no CDB por mês? ({{ bcb.atualizado|data_br("mes") }}) | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}R$ {{ r.valor|num(0) }} rendem {{ poup.ganho|brl }} por mês na poupança e {{ melhor.ganho|brl }} no {{ melhor.nome }}, com as taxas de hoje. Veja também em 6 meses, 1 ano, 2 e 5 anos, já com imposto.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), ("/quanto-rende/", "Quanto rende"), (None, r.nome ~ " reais")]) }}
+<h1>Quanto rende {{ r.nome }} reais?</h1>
+<p class="lead">Com as taxas de hoje (CDI de {{ bcb.cdi.valor|num(2) }}% e Selic de {{ bcb.selic.valor|num(2) }}% ao ano), já descontado o imposto de renda.</p>
+
+<div class="placa">
+  <div class="placa-linha">
+    <span class="placa-nome">Poupança</span>
+    <span class="placa-preco"><small>R$</small>{{ poup.ganho|num(2) }}</span>
+    <span class="placa-sub">por mês, sem imposto</span>
+  </div>
+  <div class="placa-linha">
+    <span class="placa-nome">{{ melhor.nome }}</span>
+    <span class="placa-preco"><small>R$</small>{{ melhor.ganho|num(2) }}</span>
+    <span class="placa-sub">por mês, a melhor opção da simulação</span>
+  </div>
+</div>
+
+<p>Aplicando R$ {{ r.valor|num(0) }} hoje, a diferença entre a poupança e a melhor opção de renda fixa é de {{ (melhor.ganho - poup.ganho)|brl }} no primeiro mês e de {{ ((tabela[2][2]|selectattr("melhor")|first).ganho - (tabela[2][2]|selectattr("nome", "equalto", "Poupança")|first).ganho)|brl }} em um ano.</p>
+
+{% for rot, meses, linhas in tabela %}
+<h2>Em {{ rot }}</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Aplicação</th><th class="n">Rendimento líquido</th><th class="n some-celular">Você terá</th></tr></thead>
+  <tbody>{% for l in linhas %}<tr{% if l.melhor %} class="vencedor"{% endif %}><td>{{ l.nome }}</td><td class="n">{{ l.ganho|brl }}</td><td class="n some-celular">{{ l.total|brl }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endfor %}
+
+<p><a class="botao" href="/calculadoras/rendimento/">Simular outro valor, com depósitos mensais</a></p>
+
+<h2>Outros valores</h2>
+<ul class="lista-links">{% for o in rendes if o.valor != r.valor %}<li><a href="{{ o.url }}">Quanto rende {{ o.nome }} reais</a></li>{% endfor %}</ul>
+
+{{ mc.faq([
+  ("Quanto rende R$ " ~ r.valor|num(0) ~ " na poupança por mês?", "Cerca de " ~ poup.ganho|brl ~ ", com o rendimento da poupança de " ~ bcb.poupanca.valor|num(4) ~ "% ao mês. A poupança não paga imposto de renda."),
+  ("Qual rende mais: poupança ou CDB?", "Com a Selic acima de 8,5% ao ano, um CDB que paga 100% do CDI rende mais que a poupança mesmo depois do imposto. Na simulação de 1 ano, a melhor opção para R$ " ~ r.valor|num(0) ~ " foi " ~ (tabela[2][2]|selectattr("melhor")|first).nome ~ "."),
+  ("O dinheiro no CDB é seguro?", "CDBs, LCIs e LCAs de bancos contam com a garantia do FGC até R$ 250 mil por CPF e por instituição. O Tesouro Selic é garantido pelo governo federal."),
+  ("Os valores são garantidos?", "Não. É uma simulação com as taxas de hoje, que mudam com as decisões do Banco Central. O rendimento real depende da taxa em cada mês.")
+]) }}
+<p class="nota">Simulação sem depósitos mensais. CDB e Tesouro Selic com imposto de renda pela tabela regressiva; Tesouro Selic com taxa de custódia da B3 de 0,20% ao ano sobre o que passar de R$ 10 mil. Não é recomendação de investimento.</p>
+{% endblock %}

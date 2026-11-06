@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% block titulo %}Quanto rende o seu dinheiro hoje: poupança, CDB, LCI e Tesouro | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Quanto rendem R$ 1 mil, 10 mil, 100 mil ou 1 milhão por mês na poupança, CDB, LCI/LCA e Tesouro Selic, com as taxas de hoje e já com imposto.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), (None, "Quanto rende")]) }}
+<h1>Quanto rende o seu dinheiro</h1>
+<p class="lead">Rendimento por mês na poupança e na renda fixa, com o CDI de {{ bcb.cdi.valor|num(2) }}% ao ano e a poupança a {{ bcb.poupanca.valor|num(4) }}% ao mês.</p>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Valor aplicado</th><th class="n">Poupança por mês</th><th class="n">CDB 100% do CDI por mês</th></tr></thead>
+  <tbody>
+  {% for r in rendes %}
+  {% set rs = simular(r.valor, 1) %}
+  <tr><td><a href="{{ r.url }}">R$ {{ r.valor|num(0) }}</a></td><td class="n">{{ rs[0].ganho|brl }}</td><td class="n">{{ rs[1].ganho|brl }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<p class="nota">CDB com imposto de renda de 22,5% (aplicação de 1 mês). Em prazos maiores o imposto cai, e a diferença para a poupança aumenta.</p>
+<p><a class="botao" href="/calculadoras/rendimento/">Simular com depósitos mensais</a></p>
+{% endblock %}
