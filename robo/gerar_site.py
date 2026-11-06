@@ -27,7 +27,7 @@ def brl(v, casas=2):
     if v is None:
         return "–"
     txt = f"{v:,.{casas}f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    return f"R$ {txt}"
+    return f"R$\u00a0{txt}"
 
 
 def num(v, casas=2):
@@ -93,7 +93,7 @@ def grafico(pontos, fmt="brl", casas=2, titulo="", degrau=False):
     for k in range(4):
         v = lo + (hi - lo) * (k + 0.5) / 4
         grade.append(f'<line class="g-grade" x1="{me}" x2="{L - md}" y1="{y(v):.1f}" y2="{y(v):.1f}"/>'
-                     f'<text class="g-eixo" x="{me - 8}" y="{y(v) + 4:.1f}" text-anchor="end">{html.escape(f(v).replace("R$ ", ""))}</text>')
+                     f'<text class="g-eixo" x="{me - 8}" y="{y(v) + 4:.1f}" text-anchor="end">{html.escape(f(v).replace("R$\u00a0", "").replace("R$ ", ""))}</text>')
     marcas = sorted({0, n - 1, *[round((n - 1) * k / 4) for k in range(1, 4)]})
     eixo_x = "".join(f'<text class="g-eixo" x="{x(i):.1f}" y="{A - 8}" text-anchor="{"start" if i == 0 else "end" if i == n - 1 else "middle"}">{html.escape(pontos[i][0])}</text>' for i in marcas)
     ux, uy = x(n - 1), y(vs[-1])
@@ -236,6 +236,47 @@ def _acumular(taxas):
     return f
 
 
+# ================================================================ trabalho (INSS, IRRF, 13º)
+# Mesma conta de static/trabalho.js, para as tabelas prontas das páginas.
+def _r2(x):
+    return round(x + 1e-9, 2)
+
+
+def calc_inss(bruto, R):
+    total, ant = 0.0, 0.0
+    for teto, aliq in R["inss"]["faixas"]:
+        if bruto > ant:
+            total += (min(bruto, teto) - ant) * aliq / 100
+        ant = teto
+    return _r2(total)
+
+
+def calc_irrf(bruto, inss_v, R, dependentes=0):
+    I = R["irrf"]
+    legais = inss_v + dependentes * I["dependente"]
+    deducao = max(legais, I["desconto_simplificado"])
+    base = max(0.0, _r2(bruto - deducao))
+    imposto = 0.0
+    for lim, aliq, ded in I["faixas"]:
+        if lim is None or base <= lim:
+            imposto = max(0.0, _r2(base * aliq / 100 - ded))
+            break
+    d = I["reducao"]
+    red = d["reducao_maxima"] if bruto <= d["isencao_ate"] else (d["a"] - d["b"] * bruto if bruto <= d["limite"] else 0)
+    red = _r2(max(0.0, min(imposto, red)))
+    return _r2(imposto - red)
+
+
+def exemplos_trabalho(R):
+    linhas = []
+    for s in (R["salario_minimo"], 2000, 2500, 3000, 3500, 4000, 5000, 6000, 7000, 8000, 10000, 15000):
+        i = calc_inss(s, R)
+        ir = calc_irrf(s, i, R)
+        linhas.append({"bruto": s, "inss": i, "irrf": ir, "liquido": _r2(s - i - ir),
+                       "primeira": _r2(s / 2), "segunda": _r2(s / 2 - i - ir)})
+    return linhas
+
+
 # ================================================================ moedas
 def montar_moedas(bcb):
     dados = (ler_json(DADOS / "moedas.json") or {}).get("moedas", {})
@@ -347,6 +388,7 @@ def main():
     aneel = ler_json(DADOS / "aneel.json") or {}
     energia = montar_energia(aneel)
     moedas = montar_moedas(bcb)
+    regras = ler_json(RAIZ / "regras.json")
     hoje = date.today().isoformat()
 
     env = Environment(loader=FileSystemLoader(RAIZ / "templates"), autoescape=select_autoescape(["html"]),
@@ -354,7 +396,9 @@ def main():
     env.filters.update(brl=brl, num=num, data_br=data_br, seta=seta, json=lambda o: Markup(json.dumps(o, ensure_ascii=False)))
     env.globals.update(cfg=CONFIG, PRODUTOS=PRODUTOS, UFS=UFS, grafico=grafico, serie_semanal=serie_semanal,
                        comb=comb, bcb=bcb, aneel=aneel, ano=date.today().year, regra=CONFIG["regra_etanol"],
-                       tem_energia=bool(energia and (energia["atual"] or energia["principais"])), energia=energia, moedas=moedas)
+                       tem_energia=bool(energia and (energia["atual"] or energia["principais"])), energia=energia, moedas=moedas, regras=regras,
+                       exemplos_trabalho=exemplos_trabalho(regras) if regras else [],
+                       calc_inss_teto=calc_inss(regras["inss"]["faixas"][-1][0], regras) if regras else 0)
     mapa = []
     prefixo = CONFIG.get("caminho_base", "").rstrip("/")
 
@@ -411,6 +455,9 @@ def main():
         for d in energia["principais"]:
             vizinhas = [o for o in energia["principais"] if o["uf"] == d["uf"] and o is not d]
             pagina(d["url"], "energia_dist.html", 0.7, d=d, vizinhas=vizinhas)
+    if regras:
+        pagina("/calculadoras/salario-liquido/", "calc_salario.html", 0.9)
+        pagina("/calculadoras/decimo-terceiro/", "calc_13.html", 0.9)
     pagina("/calculadoras/", "calculadoras.html", 0.7)
     pagina("/sobre/", "sobre.html", 0.3)
     pagina("/privacidade/", "privacidade.html", 0.2)

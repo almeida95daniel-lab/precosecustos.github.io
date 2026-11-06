@@ -32,7 +32,7 @@
   <div class="topo-in">
     <a class="marca" href="/">{{ cfg.nome_site }}</a>
     <nav class="nav" aria-label="Seções">
-      {% set secoes = [("/combustivel/", "Combustível"), ("/combustivel/etanol-ou-gasolina/", "Etanol ou gasolina"), ("/moedas/", "Moedas"), ("/selic-hoje/", "Juros"), ("/ipca-inflacao/", "Inflação")] %}
+      {% set secoes = [("/combustivel/", "Combustível"), ("/calculadoras/decimo-terceiro/", "13º salário"), ("/combustivel/etanol-ou-gasolina/", "Etanol ou gasolina"), ("/moedas/", "Moedas"), ("/selic-hoje/", "Juros"), ("/ipca-inflacao/", "Inflação")] %}
       {% if tem_energia %}{% set secoes = secoes + [("/conta-de-luz/", "Conta de luz")] %}{% endif %}
       {% set secoes = secoes + [("/calculadoras/", "Calculadoras")] %}
       {% for href, rotulo in secoes %}

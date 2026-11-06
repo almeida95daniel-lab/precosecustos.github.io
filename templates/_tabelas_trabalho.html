@@ -1,0 +1,32 @@
+{% macro tabela_inss() %}
+<h2>Tabela do INSS {{ regras.ano }}</h2>
+<p>A contribuição é progressiva: cada alíquota vale só para a parte do salário que cai na faixa. O desconto máximo, para quem ganha acima do teto de {{ regras.inss.faixas[-1][0]|brl }}, é de {{ (calc_inss_teto)|brl }}.</p>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Salário de contribuição</th><th class="n">Alíquota</th></tr></thead>
+  <tbody>
+  {% set ns = namespace(ant=0) %}
+  {% for teto, aliq in regras.inss.faixas %}
+  <tr><td>{% if loop.first %}Até {{ teto|brl }}{% else %}De {{ (ns.ant + 0.01)|brl }} até {{ teto|brl }}{% endif %}</td><td class="n">{{ aliq|num(1) }}%</td></tr>
+  {% set ns.ant = teto %}
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endmacro %}
+
+{% macro tabela_irrf() %}
+<h2>Tabela do Imposto de Renda {{ regras.ano }}</h2>
+<p>Primeiro desconta-se o INSS (e R$ {{ regras.irrf.dependente|num(2) }} por dependente) ou o desconto simplificado de {{ regras.irrf.desconto_simplificado|brl }}, o que for maior. Sobre o que sobra aplica-se a tabela:</p>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Base de cálculo mensal</th><th class="n">Alíquota</th><th class="n">Parcela a deduzir</th></tr></thead>
+  <tbody>
+  {% set ns = namespace(ant=0) %}
+  {% for lim, aliq, ded in regras.irrf.faixas %}
+  <tr><td>{% if loop.first %}Até {{ lim|brl }}{% elif lim is none %}Acima de {{ ns.ant|brl }}{% else %}De {{ (ns.ant + 0.01)|brl }} até {{ lim|brl }}{% endif %}</td><td class="n">{{ "isento" if aliq == 0 else (aliq|num(1) ~ "%") }}</td><td class="n">{{ ded|brl }}</td></tr>
+  {% if lim is not none %}{% set ns.ant = lim %}{% endif %}
+  {% endfor %}
+  </tbody>
+</table></div>
+{% set d = regras.irrf.reducao %}
+<h3>Isenção até {{ d.isencao_ate|brl(0) }} e redução até {{ d.limite|brl(0) }}</h3>
+<p>Desde janeiro de {{ regras.ano }}, quem recebe até {{ d.isencao_ate|brl }} por mês fica sem imposto. Entre {{ (d.isencao_ate + 0.01)|brl }} e {{ d.limite|brl }}, o imposto da tabela é reduzido em {{ d.a|brl }} menos {{ (d.b*100)|num(4) }}% da renda bruta. Acima de {{ d.limite|brl }} não há redução.</p>
+{% endmacro %}

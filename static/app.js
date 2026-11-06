@@ -69,7 +69,7 @@
 
   // ---- números em português
   window.BH = {
-    brl: function (v, c) { return (v < 0 ? "-" : "") + "R$ " + Math.abs(v).toLocaleString("pt-BR", { minimumFractionDigits: c == null ? 2 : c, maximumFractionDigits: c == null ? 2 : c }); },
+    brl: function (v, c) { return (v < 0 ? "-" : "") + "R$\u00a0" + Math.abs(v).toLocaleString("pt-BR", { minimumFractionDigits: c == null ? 2 : c, maximumFractionDigits: c == null ? 2 : c }); },
     num: function (v, c) { return v.toLocaleString("pt-BR", { minimumFractionDigits: c == null ? 2 : c, maximumFractionDigits: c == null ? 2 : c }); },
     ler: function (el) {
       if (el.type === "number") return parseFloat(el.value);

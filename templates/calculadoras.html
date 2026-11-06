@@ -11,6 +11,11 @@
   {% if comb %}<li><a href="/combustivel/etanol-ou-gasolina/">Etanol ou gasolina</a>: qual sai mais barato por quilômetro.</li>
   <li><a href="/calculadoras/custo-da-viagem/">Custo da viagem</a>: combustível da viagem com o preço da sua cidade, dividido por pessoa.</li>{% endif %}
 </ul>
+<h2>Salário</h2>
+<ul>
+  {% if regras %}<li><a href="/calculadoras/decimo-terceiro/">13º salário</a>: quanto você recebe na 1ª e na 2ª parcela, com descontos.</li>
+  <li><a href="/calculadoras/salario-liquido/">Salário líquido</a>: INSS e Imposto de Renda {{ regras.ano }}, com a isenção até R$ 5 mil.</li>{% endif %}
+</ul>
 <h2>Dinheiro</h2>
 <ul>
   {% if bcb %}<li><a href="/calculadoras/rendimento/">Poupança, CDB, LCI ou Tesouro</a>: quanto rende cada um, já com imposto.</li>

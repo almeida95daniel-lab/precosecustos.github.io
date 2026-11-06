@@ -27,6 +27,8 @@
 
 <h2>Calculadoras</h2>
 <ul>
+  {% if regras %}<li><a href="/calculadoras/decimo-terceiro/">13º salário {{ regras.ano }}</a>: o valor líquido da 1ª e da 2ª parcela.</li>
+  <li><a href="/calculadoras/salario-liquido/">Salário líquido</a>: quanto sobra depois do INSS e do Imposto de Renda.</li>{% endif %}
   {% if comb %}<li><a href="/combustivel/etanol-ou-gasolina/">Etanol ou gasolina</a>: descubra qual sai mais barato para o seu carro.</li>
   <li><a href="/calculadoras/custo-da-viagem/">Custo da viagem</a>: quanto vai gastar de combustível com o preço da sua cidade.</li>{% endif %}
   {% if bcb %}<li><a href="/calculadoras/rendimento/">Poupança, CDB ou Tesouro</a>: quanto rende o seu dinheiro em cada um, já com imposto.</li>

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% import "_tabelas_trabalho.html" as tt with context %}
+{% set dt = regras.decimo_terceiro %}
+{% block titulo %}Calculadora de 13º salário {{ regras.ano }}: 1ª e 2ª parcela líquidas | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Calcule seu 13º salário {{ regras.ano }}: valor da 1ª parcela (até {{ dt.primeira_parcela_ate }}) e da 2ª (até {{ dt.segunda_parcela_ate }}), com INSS, Imposto de Renda e a isenção até R$ 5 mil. Proporcional por meses trabalhados.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), ("/calculadoras/", "Calculadoras"), (None, "13º salário")]) }}
+<h1>Calculadora de 13º salário {{ regras.ano }}</h1>
+<p class="lead">Quanto você recebe em cada parcela do décimo terceiro, já com os descontos de INSS e Imposto de Renda.</p>
+
+<section class="calc">
+  <div class="campos">
+    <div class="campo"><label for="sal">Salário bruto (R$)</label><input id="sal" type="number" min="0" step="0.01" value="3000" inputmode="decimal"></div>
+    <div class="campo"><label for="meses">Meses trabalhados no ano</label><input id="meses" type="number" min="1" max="12" step="1" value="12" inputmode="numeric"><p class="ajuda">Conta o mês em que você trabalhou 15 dias ou mais.</p></div>
+    <div class="campo"><label for="media">Média de horas extras e comissões (R$)</label><input id="media" type="number" min="0" step="0.01" value="0" inputmode="decimal"></div>
+    <div class="campo"><label for="dep">Dependentes</label><input id="dep" type="number" min="0" step="1" value="0" inputmode="numeric"></div>
+  </div>
+  <div class="resultado" aria-live="polite">
+    <div class="resultado-grande" id="res"></div>
+    <div class="tabela-rolagem"><table><tbody id="det"></tbody></table></div>
+    <p class="nota" id="obs"></p>
+  </div>
+</section>
+
+<h2>Quando o 13º é pago</h2>
+<ul>
+  <li><strong>1ª parcela: até {{ dt.primeira_parcela_ate }}.</strong> Metade do 13º, sem nenhum desconto. Algumas empresas antecipam junto com as férias.</li>
+  <li><strong>2ª parcela: até {{ dt.segunda_parcela_ate }}.</strong> A outra metade, menos o INSS e o Imposto de Renda calculados sobre o 13º inteiro.</li>
+</ul>
+<p>Por isso a 2ª parcela é sempre menor que a 1ª. O imposto do 13º é calculado separado do salário de dezembro.</p>
+
+<h2>13º líquido por faixa de salário</h2>
+<p>Para quem trabalhou o ano inteiro, sem dependentes nem horas extras:</p>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Salário</th><th class="n">1ª parcela</th><th class="n">2ª parcela</th><th class="n">13º líquido</th></tr></thead>
+  <tbody>{% for e in exemplos_trabalho %}<tr><td>{{ e.bruto|brl }}{% if loop.first %} <span class="meta">(salário mínimo)</span>{% endif %}</td><td class="n">{{ e.primeira|brl }}</td><td class="n">{{ e.segunda|brl }}</td><td class="n"><strong>{{ e.liquido|brl }}</strong></td></tr>{% endfor %}</tbody>
+</table></div>
+
+{{ tt.tabela_inss() }}
+{{ tt.tabela_irrf() }}
+
+<p><a class="botao" href="/calculadoras/salario-liquido/">Calcular o salário líquido do mês</a></p>
+
+{{ mc.faq([
+  ("Até quando a empresa deve pagar o 13º?", "A 1ª parcela vai até " ~ dt.primeira_parcela_ate ~ " e a 2ª até " ~ dt.segunda_parcela_ate ~ ". Se o dia cair em fim de semana ou feriado, o pagamento deve ser antecipado."),
+  ("Por que a 2ª parcela é menor?", "Porque todos os descontos do 13º (INSS e Imposto de Renda) saem da 2ª parcela. A 1ª é paga sem descontos."),
+  ("Quem ganha até R$ 5 mil paga Imposto de Renda no 13º?", "Não. A redução da Lei 15.270/2025, que zera o imposto de quem recebe até R$ 5.000,00, também se aplica ao 13º, conforme a Instrução Normativa RFB 2.299/2025."),
+  ("Como é o 13º de quem não trabalhou o ano todo?", "É proporcional: recebe 1/12 do salário para cada mês com 15 dias ou mais de trabalho. Quem entrou em junho, por exemplo, recebe 7/12."),
+  ("Quem foi demitido recebe 13º?", "Sim, o 13º proporcional é pago na rescisão, exceto em demissão por justa causa.")
+]) }}
+<p class="nota">Simulação com as tabelas oficiais de {{ regras.ano }}. O valor pago pela empresa pode variar com adicionais, faltas e descontos específicos. Não substitui o cálculo da empresa ou de um contador.</p>
+{% endblock %}
+{% block scripts %}
+<script src="/static/trabalho.js"></script>
+<script>
+(function () {
+  var R = {{ regras|json }};
+  var $ = function (id) { return document.getElementById(id); };
+  function linha(rot, v, neg) { return "<tr><td>" + rot + "</td><td class=\"n\">" + (neg && v ? "− " : "") + BH.brl(v) + "</td></tr>"; }
+  function calc() {
+    var d = Trabalho.decimoTerceiro({ salario: BH.ler($("sal")) || 0, meses: Math.round(BH.ler($("meses")) || 0),
+      media: BH.ler($("media")) || 0, dependentes: Math.max(0, Math.round(BH.ler($("dep")) || 0)) }, R);
+    $("res").textContent = BH.brl(d.liquido) + " de 13º líquido";
+    $("det").innerHTML = linha("13º bruto (" + d.meses + "/12)", d.bruto) +
+      "<tr class=\"vencedor\"><td>1ª parcela, até " + R.decimo_terceiro.primeira_parcela_ate + "</td><td class=\"n\">" + BH.brl(d.primeira) + "</td></tr>" +
+      linha("INSS sobre o 13º", d.inss, 1) + linha("Imposto de Renda sobre o 13º", d.irrf.valor, 1) +
+      "<tr class=\"vencedor\"><td>2ª parcela, até " + R.decimo_terceiro.segunda_parcela_ate + "</td><td class=\"n\">" + BH.brl(d.segunda) + "</td></tr>";
+    $("obs").textContent = d.irrf.tabela === 0 ? "Isento de Imposto de Renda no 13º." :
+      (d.irrf.valor === 0 ? "Isento: o imposto de " + BH.brl(d.irrf.tabela) + " pela tabela é zerado pela nova lei." : d.irrf.reducao > 0 ? "Imposto pela tabela: " + BH.brl(d.irrf.tabela) + ", com redução de " + BH.brl(d.irrf.reducao) + " pela nova lei." : "");
+  }
+  ["sal", "meses", "media", "dep"].forEach(function (id) { $(id).addEventListener("input", calc); });
+  calc();
+})();
+</script>
+{% endblock %}

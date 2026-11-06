@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% import "_tabelas_trabalho.html" as tt with context %}
+{% block titulo %}Calculadora de salário líquido {{ regras.ano }} (com a nova isenção do IR) | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Calcule seu salário líquido em {{ regras.ano }}: desconto do INSS, Imposto de Renda com a isenção até R$ 5 mil, dependentes e vale-transporte. Tabelas oficiais atualizadas.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), ("/calculadoras/", "Calculadoras"), (None, "Salário líquido")]) }}
+<h1>Calculadora de salário líquido {{ regras.ano }}</h1>
+<p class="lead">Quanto cai na conta depois do INSS e do Imposto de Renda, já com a isenção para quem ganha até R$ 5 mil.</p>
+
+<section class="calc">
+  <div class="campos">
+    <div class="campo"><label for="bruto">Salário bruto (R$)</label><input id="bruto" type="number" min="0" step="0.01" value="3500" inputmode="decimal"></div>
+    <div class="campo"><label for="dep">Dependentes</label><input id="dep" type="number" min="0" step="1" value="0" inputmode="numeric"><p class="ajuda">Filhos e outros dependentes para o Imposto de Renda.</p></div>
+    <div class="campo"><label for="pensao">Pensão alimentícia (R$)</label><input id="pensao" type="number" min="0" step="0.01" value="0" inputmode="decimal"></div>
+    <div class="campo"><label for="outros">Outros descontos (R$)</label><input id="outros" type="number" min="0" step="0.01" value="0" inputmode="decimal"><p class="ajuda">Plano de saúde, vale-refeição, sindicato.</p></div>
+    <div class="campo"><label for="vt"><input id="vt" type="checkbox" style="width:auto;min-height:0;margin-right:6px">Desconto de vale-transporte (6%)</label></div>
+  </div>
+  <div class="resultado" aria-live="polite">
+    <div class="resultado-grande" id="res"></div>
+    <div class="tabela-rolagem"><table><tbody id="det"></tbody></table></div>
+    <p class="nota" id="obs"></p>
+  </div>
+</section>
+
+<h2>Salário líquido por faixa de salário</h2>
+<p>Sem dependentes nem outros descontos, com as tabelas de {{ regras.ano }}:</p>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Salário bruto</th><th class="n">INSS</th><th class="n">Imposto de Renda</th><th class="n">Salário líquido</th></tr></thead>
+  <tbody>{% for e in exemplos_trabalho %}<tr><td>{{ e.bruto|brl }}{% if loop.first %} <span class="meta">(salário mínimo)</span>{% endif %}</td><td class="n">{{ e.inss|brl }}</td><td class="n">{{ e.irrf|brl }}</td><td class="n"><strong>{{ e.liquido|brl }}</strong></td></tr>{% endfor %}</tbody>
+</table></div>
+
+{{ tt.tabela_inss() }}
+{{ tt.tabela_irrf() }}
+
+<p><a class="botao" href="/calculadoras/decimo-terceiro/">Calcular o 13º salário</a></p>
+
+{{ mc.faq([
+  ("Quem ganha R$ 5 mil paga Imposto de Renda em " ~ regras.ano ~ "?", "Não. Desde janeiro de " ~ regras.ano ~ ", quem recebe até R$ 5.000,00 por mês tem o imposto zerado pela redução criada pela Lei 15.270/2025. Entre R$ 5.000,01 e R$ 7.350,00 o imposto é reduzido parcialmente."),
+  ("Como é calculado o desconto do INSS?", "De forma progressiva: cada parte do salário paga a alíquota da sua faixa (7,5%, 9%, 12% ou 14%). Por isso a alíquota efetiva é sempre menor que a da última faixa."),
+  ("O vale-transporte é descontado do salário?", "O empregador pode descontar até 6% do salário básico para custear o vale-transporte. Se o custo das passagens for menor, desconta-se só esse valor."),
+  ("Esta calculadora vale para servidor público?", "Ela usa a tabela do INSS dos trabalhadores com carteira assinada. Servidores de regimes próprios têm alíquotas diferentes.")
+]) }}
+<p class="nota">Simulação com as tabelas oficiais de {{ regras.ano }}. O valor do seu holerite pode variar por horas extras, faltas, adicionais e benefícios. Não substitui o cálculo da empresa ou de um contador.</p>
+{% endblock %}
+{% block scripts %}
+<script src="/static/trabalho.js"></script>
+<script>
+(function () {
+  var R = {{ regras|json }};
+  var $ = function (id) { return document.getElementById(id); };
+  function linha(rot, v, neg) { return "<tr><td>" + rot + "</td><td class=\"n\">" + (neg && v ? "− " : "") + BH.brl(v) + "</td></tr>"; }
+  function calc() {
+    var o = { bruto: BH.ler($("bruto")) || 0, dependentes: Math.max(0, Math.round(BH.ler($("dep")) || 0)),
+              pensao: BH.ler($("pensao")) || 0, outros: BH.ler($("outros")) || 0, vt: $("vt").checked };
+    var s = Trabalho.salarioLiquido(o, R);
+    $("res").textContent = BH.brl(s.liquido) + " líquido";
+    $("det").innerHTML = linha("Salário bruto", s.bruto) + linha("INSS", s.inss, 1) + linha("Imposto de Renda", s.irrf.valor, 1) +
+      (s.vt ? linha("Vale-transporte (6%)", s.vt, 1) : "") + (s.outros ? linha("Pensão e outros descontos", s.outros, 1) : "") +
+      "<tr class=\"vencedor\"><td>Salário líquido</td><td class=\"n\">" + BH.brl(s.liquido) + "</td></tr>";
+    var ir = s.irrf;
+    $("obs").textContent = ir.tabela === 0 ? "Isento de Imposto de Renda." :
+      (ir.valor === 0 ? "Isento: o imposto de " + BH.brl(ir.tabela) + " pela tabela é zerado pela nova lei." : ir.reducao > 0 ? "Imposto pela tabela: " + BH.brl(ir.tabela) + ", com redução de " + BH.brl(ir.reducao) + " pela nova lei." : "") +
+      (ir.simplificado ? " Foi usado o desconto simplificado, mais vantajoso neste caso." : "");
+  }
+  ["bruto", "dep", "pensao", "outros", "vt"].forEach(function (id) { $(id).addEventListener("input", calc); });
+  calc();
+})();
+</script>
+{% endblock %}

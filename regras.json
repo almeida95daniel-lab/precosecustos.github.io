@@ -1,0 +1,16 @@
+{
+  "ano": 2026,
+  "salario_minimo": 1621.00,
+  "inss": {
+    "fonte": "Tabela de contribuição dos segurados empregados, vigente desde janeiro de 2026",
+    "faixas": [[1621.00, 7.5], [2902.84, 9.0], [4354.27, 12.0], [8475.55, 14.0]]
+  },
+  "irrf": {
+    "fonte": "Tabela progressiva mensal (Lei 15.191/2025) e redução da Lei 15.270/2025 (IN RFB 2.299/2025)",
+    "faixas": [[2428.80, 0, 0], [2826.65, 7.5, 182.16], [3751.05, 15.0, 394.16], [4664.68, 22.5, 675.49], [null, 27.5, 908.73]],
+    "dependente": 189.59,
+    "desconto_simplificado": 607.20,
+    "reducao": {"isencao_ate": 5000.00, "reducao_maxima": 312.89, "limite": 7350.00, "a": 978.62, "b": 0.133145}
+  },
+  "decimo_terceiro": {"primeira_parcela_ate": "30/11", "segunda_parcela_ate": "20/12"}
+}
