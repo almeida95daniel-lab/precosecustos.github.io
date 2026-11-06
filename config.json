@@ -1,9 +1,9 @@
 {
   "nome_site": "Bolso Hoje",
   "descricao": "Preço dos combustíveis na sua cidade, dólar, juros e inflação — atualizados sozinhos com dados oficiais.",
-  "url_base": "https://almeida95daniel-lab.github.io/precosecustos.github.io",
-  "caminho_base": "/precosecustos.github.io",
-  "dominio_proprio": "",
+  "url_base": "https://bolsohoje.com.br",
+  "caminho_base": "",
+  "dominio_proprio": "bolsohoje.com.br",
   "email_contato": "contatobolsohoje@gmail.com",
   "adsense_cliente": "",
   "google_analytics": "",
