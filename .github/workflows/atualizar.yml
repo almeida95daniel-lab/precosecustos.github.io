@@ -60,7 +60,10 @@ jobs:
             echo "Sem dados novos."
           else
             git commit -m "Dados atualizados em $(date -u +'%Y-%m-%d %H:%M') UTC"
-            git push
+            for i in 1 2 3; do
+              git pull --rebase -X theirs origin main && git push && break
+              sleep 15
+            done
           fi
 
       - name: Gerar o site
