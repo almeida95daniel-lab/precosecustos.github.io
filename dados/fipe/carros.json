@@ -1,0 +1,442 @@
+{
+ "marcas": {
+  "4": {
+   "nome": "AM Gen",
+   "modelos": {}
+  },
+  "269": {
+   "nome": "ARROW",
+   "modelos": {}
+  },
+  "189": {
+   "nome": "ASTON MARTIN",
+   "modelos": {}
+  },
+  "1": {
+   "nome": "Acura",
+   "modelos": {}
+  },
+  "2": {
+   "nome": "Agrale",
+   "modelos": {}
+  },
+  "3": {
+   "nome": "Alfa Romeo",
+   "modelos": {}
+  },
+  "5": {
+   "nome": "Asia Motors",
+   "modelos": {}
+  },
+  "6": {
+   "nome": "Audi",
+   "modelos": {}
+  },
+  "7": {
+   "nome": "BMW",
+   "modelos": {}
+  },
+  "8": {
+   "nome": "BRM",
+   "modelos": {}
+  },
+  "238": {
+   "nome": "BYD",
+   "modelos": {}
+  },
+  "207": {
+   "nome": "Baby",
+   "modelos": {}
+  },
+  "123": {
+   "nome": "Bugre",
+   "modelos": {}
+  },
+  "236": {
+   "nome": "CAB Motors",
+   "modelos": {}
+  },
+  "11": {
+   "nome": "CBT Jipe",
+   "modelos": {}
+  },
+  "136": {
+   "nome": "CHANA",
+   "modelos": {}
+  },
+  "182": {
+   "nome": "CHANGAN",
+   "modelos": {}
+  },
+  "10": {
+   "nome": "Cadillac",
+   "modelos": {}
+  },
+  "265": {
+   "nome": "Caoa Changan",
+   "modelos": {}
+  },
+  "245": {
+   "nome": "Caoa Chery",
+   "modelos": {}
+  },
+  "161": {
+   "nome": "Caoa Chery/Chery",
+   "modelos": {}
+  },
+  "12": {
+   "nome": "Chrysler",
+   "modelos": {}
+  },
+  "13": {
+   "nome": "Citroën",
+   "modelos": {}
+  },
+  "14": {
+   "nome": "Cross Lander",
+   "modelos": {}
+  },
+  "241": {
+   "nome": "D2D Motors",
+   "modelos": {}
+  },
+  "246": {
+   "nome": "DFSK",
+   "modelos": {}
+  },
+  "15": {
+   "nome": "Daewoo",
+   "modelos": {}
+  },
+  "16": {
+   "nome": "Daihatsu",
+   "modelos": {}
+  },
+  "263": {
+   "nome": "Denza",
+   "modelos": {}
+  },
+  "17": {
+   "nome": "Dodge",
+   "modelos": {}
+  },
+  "147": {
+   "nome": "EFFA",
+   "modelos": {}
+  },
+  "18": {
+   "nome": "Engesa",
+   "modelos": {}
+  },
+  "19": {
+   "nome": "Envemo",
+   "modelos": {}
+  },
+  "249": {
+   "nome": "FEVER",
+   "modelos": {}
+  },
+  "190": {
+   "nome": "FOTON",
+   "modelos": {}
+  },
+  "20": {
+   "nome": "Ferrari",
+   "modelos": {}
+  },
+  "21": {
+   "nome": "Fiat",
+   "modelos": {}
+  },
+  "149": {
+   "nome": "Fibravan",
+   "modelos": {}
+  },
+  "22": {
+   "nome": "Ford",
+   "modelos": {}
+  },
+  "170": {
+   "nome": "Fyber",
+   "modelos": {}
+  },
+  "254": {
+   "nome": "GAC",
+   "modelos": {}
+  },
+  "199": {
+   "nome": "GEELY",
+   "modelos": {}
+  },
+  "23": {
+   "nome": "GM - Chevrolet",
+   "modelos": {}
+  },
+  "153": {
+   "nome": "GREAT WALL",
+   "modelos": {}
+  },
+  "240": {
+   "nome": "GWM",
+   "modelos": {}
+  },
+  "24": {
+   "nome": "Gurgel",
+   "modelos": {}
+  },
+  "152": {
+   "nome": "HAFEI",
+   "modelos": {}
+  },
+  "214": {
+   "nome": "HITECH ELECTRIC",
+   "modelos": {}
+  },
+  "25": {
+   "nome": "Honda",
+   "modelos": {}
+  },
+  "26": {
+   "nome": "Hyundai",
+   "modelos": {}
+  },
+  "208": {
+   "nome": "IVECO",
+   "modelos": {}
+  },
+  "27": {
+   "nome": "Isuzu",
+   "modelos": {}
+  },
+  "177": {
+   "nome": "JAC",
+   "modelos": {}
+  },
+  "154": {
+   "nome": "JINBEI",
+   "modelos": {}
+  },
+  "30": {
+   "nome": "JPX",
+   "modelos": {}
+  },
+  "251": {
+   "nome": "Jaecoo",
+   "modelos": {}
+  },
+  "28": {
+   "nome": "Jaguar",
+   "modelos": {}
+  },
+  "29": {
+   "nome": "Jeep",
+   "modelos": {}
+  },
+  "264": {
+   "nome": "Jetour",
+   "modelos": {}
+  },
+  "31": {
+   "nome": "Kia Motors",
+   "modelos": {}
+  },
+  "171": {
+   "nome": "LAMBORGHINI",
+   "modelos": {}
+  },
+  "168": {
+   "nome": "LIFAN",
+   "modelos": {}
+  },
+  "127": {
+   "nome": "LOBINI",
+   "modelos": {}
+  },
+  "32": {
+   "nome": "Lada",
+   "modelos": {}
+  },
+  "33": {
+   "nome": "Land Rover",
+   "modelos": {}
+  },
+  "260": {
+   "nome": "Leapmotor",
+   "modelos": {}
+  },
+  "34": {
+   "nome": "Lexus",
+   "modelos": {}
+  },
+  "35": {
+   "nome": "Lotus",
+   "modelos": {}
+  },
+  "167": {
+   "nome": "MG",
+   "modelos": {}
+  },
+  "156": {
+   "nome": "MINI",
+   "modelos": {}
+  },
+  "140": {
+   "nome": "Mahindra",
+   "modelos": {}
+  },
+  "36": {
+   "nome": "Maserati",
+   "modelos": {}
+  },
+  "37": {
+   "nome": "Matra",
+   "modelos": {}
+  },
+  "38": {
+   "nome": "Mazda",
+   "modelos": {}
+  },
+  "211": {
+   "nome": "Mclaren",
+   "modelos": {}
+  },
+  "39": {
+   "nome": "Mercedes-Benz",
+   "modelos": {}
+  },
+  "40": {
+   "nome": "Mercury",
+   "modelos": {}
+  },
+  "41": {
+   "nome": "Mitsubishi",
+   "modelos": {}
+  },
+  "42": {
+   "nome": "Miura",
+   "modelos": {}
+  },
+  "250": {
+   "nome": "NETA",
+   "modelos": {}
+  },
+  "43": {
+   "nome": "Nissan",
+   "modelos": {}
+  },
+  "252": {
+   "nome": "Omoda",
+   "modelos": {}
+  },
+  "44": {
+   "nome": "Peugeot",
+   "modelos": {}
+  },
+  "45": {
+   "nome": "Plymouth",
+   "modelos": {}
+  },
+  "46": {
+   "nome": "Pontiac",
+   "modelos": {}
+  },
+  "47": {
+   "nome": "Porsche",
+   "modelos": {}
+  },
+  "185": {
+   "nome": "RAM",
+   "modelos": {}
+  },
+  "186": {
+   "nome": "RELY",
+   "modelos": {}
+  },
+  "48": {
+   "nome": "Renault",
+   "modelos": {}
+  },
+  "195": {
+   "nome": "Rolls-Royce",
+   "modelos": {}
+  },
+  "49": {
+   "nome": "Rover",
+   "modelos": {}
+  },
+  "247": {
+   "nome": "SERES",
+   "modelos": {}
+  },
+  "183": {
+   "nome": "SHINERAY",
+   "modelos": {}
+  },
+  "125": {
+   "nome": "SSANGYONG",
+   "modelos": {}
+  },
+  "50": {
+   "nome": "Saab",
+   "modelos": {}
+  },
+  "51": {
+   "nome": "Saturn",
+   "modelos": {}
+  },
+  "52": {
+   "nome": "Seat",
+   "modelos": {}
+  },
+  "54": {
+   "nome": "Subaru",
+   "modelos": {}
+  },
+  "55": {
+   "nome": "Suzuki",
+   "modelos": {}
+  },
+  "165": {
+   "nome": "TAC",
+   "modelos": {}
+  },
+  "56": {
+   "nome": "Toyota",
+   "modelos": {}
+  },
+  "57": {
+   "nome": "Troller",
+   "modelos": {}
+  },
+  "59": {
+   "nome": "VW - VolksWagen",
+   "modelos": {}
+  },
+  "58": {
+   "nome": "Volvo",
+   "modelos": {}
+  },
+  "163": {
+   "nome": "Wake",
+   "modelos": {}
+  },
+  "120": {
+   "nome": "Walk",
+   "modelos": {}
+  },
+  "253": {
+   "nome": "ZEEKR",
+   "modelos": {}
+  },
+  "157": {
+   "nome": "smart",
+   "modelos": {}
+  }
+ },
+ "referencia": {
+  "codigo": "11/2026",
+  "mes": "11/2026"
+ },
+ "fonte": "Parallelum (API FIPE)",
+ "marcas_ref": "11/2026"
+}
