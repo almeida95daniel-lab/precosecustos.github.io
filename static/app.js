@@ -1,5 +1,14 @@
 /* Bolso Hoje — interações leves: dica nos gráficos e busca de cidade. */
 (function () {
+  // ---- menu no celular
+  var botao = document.querySelector(".menu-btn"), menu = document.getElementById("menu-principal");
+  if (botao && menu) {
+    botao.addEventListener("click", function () {
+      var aberto = menu.classList.toggle("aberto");
+      botao.setAttribute("aria-expanded", aberto ? "true" : "false");
+    });
+  }
+
   // ---- gráficos: mira + dica no ponto mais próximo
   document.querySelectorAll(".g-area").forEach(function (area) {
     var pts;
@@ -46,29 +55,42 @@
     svg.addEventListener("pointerleave", esconder);
   });
 
-  // ---- busca de cidade
-  var dados = document.getElementById("cidades-dados");
-  var cidades = [];
-  if (dados) { try { cidades = JSON.parse(dados.textContent); } catch (e) {} }
-  window.BH_CIDADES = cidades;
-  function sem(s) { return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); }
+  // ---- lista de cidades (carregada só quando alguém usa a busca)
+  var estilo = document.querySelector('link[rel="stylesheet"][href*="/static/"]');
+  var RAIZ_STATIC = estilo ? estilo.getAttribute("href").replace(/estilo\.css.*$/, "") : "/static/";
+  var promessaCidades = null;
+  function cidades() {
+    if (!promessaCidades) {
+      promessaCidades = fetch(RAIZ_STATIC + "cidades.json").then(function (r) { return r.json(); })
+        .then(function (d) { window.BH_CIDADES = d; return d; })
+        .catch(function () { promessaCidades = null; return []; });
+    }
+    return promessaCidades;
+  }
+  window.BH_CIDADES = [];
+  function sem(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); }
   document.querySelectorAll("form.busca").forEach(function (f) {
     var campo = f.querySelector("input");
     var msg = f.querySelector(".busca-msg");
+    if (!campo || !msg) return;
+    campo.addEventListener("focus", cidades, { once: true });
     f.addEventListener("submit", function (ev) {
       ev.preventDefault();
       var q = sem(campo.value.replace(/\s*\(..\)\s*$/, "").replace(/\s*-\s*..$/, ""));
       if (!q) { campo.focus(); return; }
-      var exato = cidades.find(function (c) { return sem(c.n) === q || sem(c.n + " " + c.uf) === q; });
-      var parcial = exato || cidades.find(function (c) { return sem(c.n).indexOf(q) === 0; }) ||
-        cidades.find(function (c) { return sem(c.n).indexOf(q) >= 0; });
-      if (parcial) { location.href = parcial.u; return; }
-      if (msg) msg.textContent = "A ANP não pesquisa preços em “" + campo.value + "”. Procure uma cidade próxima ou veja a média do seu estado.";
+      cidades().then(function (lista) {
+        var exato = lista.find(function (c) { return sem(c.n) === q || sem(c.n + " " + c.uf) === q; });
+        var parcial = exato || lista.find(function (c) { return sem(c.n).indexOf(q) === 0; }) ||
+          lista.find(function (c) { return sem(c.n).indexOf(q) >= 0; });
+        if (parcial) { location.href = parcial.u; return; }
+        msg.textContent = "A ANP não pesquisa preços em \u201c" + campo.value + "\u201d. Procure uma cidade próxima ou veja a média do seu estado.";
+      });
     });
   });
 
   // ---- números em português
   window.BH = {
+    cidades: cidades,
     brl: function (v, c) { return (v < 0 ? "-" : "") + "R$\u00a0" + Math.abs(v).toLocaleString("pt-BR", { minimumFractionDigits: c == null ? 2 : c, maximumFractionDigits: c == null ? 2 : c }); },
     num: function (v, c) { return v.toLocaleString("pt-BR", { minimumFractionDigits: c == null ? 2 : c, maximumFractionDigits: c == null ? 2 : c }); },
     ler: function (el) {

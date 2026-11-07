@@ -27,9 +27,10 @@
   var $ = function (id) { return document.getElementById(id); };
   var BR = {{ {"gasolina": comb.brasil.produtos.get("gasolina", {}).get("medio"), "etanol": comb.brasil.produtos.get("etanol", {}).get("medio"), "diesel_s10": comb.brasil.produtos.get("diesel_s10", {}).get("medio"), "gnv": comb.brasil.produtos.get("gnv", {}).get("medio")}|json }};
   function sem(s) { return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s*\(..\)\s*$/, "").trim(); }
-  function precoAuto() {
+  function precoAuto() { BH.cidades().then(precoCom); }
+  function precoCom(lista) {
     var nome = sem($("cidade").value), p = $("comb").value;
-    var c = nome && (window.BH_CIDADES || []).find(function (x) { return sem(x.n) === nome; });
+    var c = nome && (lista || []).find(function (x) { return sem(x.n) === nome; });
     if (c && c[p]) { $("preco").value = c[p].toFixed(2); $("origem").textContent = "Média de " + c.n + " (" + c.uf + ")."; }
     else if (BR[p]) { $("preco").value = BR[p].toFixed(2); $("origem").textContent = nome ? "Sem dado desse combustível na cidade; usando a média do Brasil." : "Média do Brasil."; }
     calc();

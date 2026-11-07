@@ -3,6 +3,14 @@
 {% block titulo %}{{ cfg.nome_site }}: preço da gasolina na sua cidade, dólar, juros e inflação hoje{% endblock %}
 {% block conteudo %}
 <h1>Quanto custa abastecer na sua cidade esta semana?</h1>
+<ul class="atalhos" aria-label="Atalhos">
+  {% if comb %}<li><a href="/combustivel/"><strong>Combustível</strong><span>preço na sua cidade</span></a></li>{% endif %}
+  {% if fipe %}<li><a href="/tabela-fipe/"><strong>Tabela FIPE</strong><span>carros e motos</span></a></li>{% endif %}
+  {% if regras %}<li><a href="/calculadoras/decimo-terceiro/"><strong>13º salário</strong><span>1ª e 2ª parcela</span></a></li>{% endif %}
+  {% if moedas %}<li><a href="/moedas/"><strong>Dólar e moedas</strong><span>cotação de hoje</span></a></li>{% endif %}
+  {% if bcb %}<li><a href="/quanto-rende/"><strong>Quanto rende</strong><span>poupança e CDB</span></a></li>{% endif %}
+  {% if tem_energia %}<li><a href="/conta-de-luz/"><strong>Conta de luz</strong><span>tarifa e bandeira</span></a></li>{% endif %}
+</ul>
 {% if comb %}
 <p class="lead">Preços médios de {{ comb.cidades|length }} cidades, da pesquisa oficial da ANP de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}.</p>
 {{ m.busca() }}

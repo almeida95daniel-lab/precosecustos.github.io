@@ -32,7 +32,10 @@
 <header class="topo">
   <div class="topo-in">
     <a class="marca" href="/">{{ cfg.nome_site }}</a>
-    <nav class="nav" aria-label="Seções">
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-principal">
+      <span class="menu-icone" aria-hidden="true"></span>Menu
+    </button>
+    <nav class="nav" id="menu-principal" aria-label="Seções">
       {% set secoes = [("/combustivel/", "Combustível")] + ([("/tabela-fipe/", "Tabela FIPE")] if fipe else []) + [("/calculadoras/decimo-terceiro/", "13º salário"), ("/moedas/", "Moedas"), ("/selic-hoje/", "Juros"), ("/ipca-inflacao/", "Inflação")] %}
       {% if tem_energia %}{% set secoes = secoes + [("/conta-de-luz/", "Conta de luz")] %}{% endif %}
       {% set secoes = secoes + [("/calculadoras/", "Calculadoras")] %}
@@ -56,7 +59,6 @@
     </div>
   </div>
 </footer>
-{% if cidades_js %}<script type="application/json" id="cidades-dados">{{ cidades_js|json }}</script>{% endif %}
 <script src="/static/app.js"></script>
 {% block scripts %}{% endblock %}
 </body>

@@ -54,11 +54,53 @@ img, svg { max-width: 100%; }
 .nav::-webkit-scrollbar { display: none; }
 .nav a { color: var(--tinta-2); text-decoration: none; font-weight: 500; white-space: nowrap; padding: 18px 0 16px; border-bottom: 3px solid transparent; }
 .nav a:hover, .nav a[aria-current] { color: var(--tinta); border-bottom-color: var(--tinta); }
+.menu-btn { display: none; }
 @media (max-width: 720px) {
-  .topo-in { flex-wrap: wrap; gap: 0; padding-top: 12px; }
-  .nav { flex-basis: 100%; }
-  .nav a { padding: 12px 0; }
+  .topo { position: sticky; top: 0; z-index: 20; }
+  .topo-in { flex-wrap: wrap; gap: 0; min-height: 56px; justify-content: space-between; }
+  .marca { font-size: 1.45rem; }
+  .menu-btn {
+    display: inline-flex; align-items: center; gap: 8px; background: transparent; color: var(--tinta);
+    border: 1px solid var(--linha); min-height: 40px; padding: 6px 14px; font-weight: 600;
+  }
+  .menu-icone, .menu-icone::before, .menu-icone::after { display: block; width: 16px; height: 2px; background: currentColor; border-radius: 2px; position: relative; }
+  .menu-icone::before, .menu-icone::after { content: ""; position: absolute; left: 0; }
+  .menu-icone::before { top: -5px; }
+  .menu-icone::after { top: 5px; }
+  .menu-btn[aria-expanded="true"] .menu-icone { background: transparent; }
+  .menu-btn[aria-expanded="true"] .menu-icone::before { top: 0; transform: rotate(45deg); }
+  .menu-btn[aria-expanded="true"] .menu-icone::after { top: 0; transform: rotate(-45deg); }
+  .nav { display: none; flex-basis: 100%; grid-template-columns: 1fr 1fr; gap: 0 16px; padding: 4px 0 12px; overflow: visible; }
+  .nav.aberto { display: grid; }
+  .nav a { padding: 12px 0; border-bottom: 1px solid var(--linha); font-size: 1.05rem; }
+  .nav a[aria-current] { border-bottom-color: var(--placa-tinta); }
+  .lista-links li { padding: 7px 0; }
+  .busca button { flex: 1 1 100%; justify-content: center; }
+  h2 { margin-top: 44px; }
+  .placa { margin-left: -4px; margin-right: -4px; }
 }
+
+/* ---------- aviso de rolagem nas tabelas largas */
+.tabela-rolagem {
+  background:
+    linear-gradient(to right, var(--fundo) 30%, transparent) left / 24px 100% no-repeat local,
+    linear-gradient(to left, var(--fundo) 30%, transparent) right / 24px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.18), transparent) left / 10px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.18), transparent) right / 10px 100% no-repeat scroll;
+}
+.tabela-rolagem table { background: transparent; }
+.tabela-rolagem tbody tr { background: var(--superficie); }
+
+/* ---------- atalhos da página inicial */
+.atalhos { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin: 20px 0 8px; padding: 0; list-style: none; max-width: none; }
+.atalhos a {
+  display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; min-height: 76px; background: var(--superficie);
+  border: 1px solid var(--linha); border-radius: var(--raio); text-decoration: none; color: var(--tinta);
+}
+.atalhos a:hover { border-color: var(--tinta-3); }
+.atalhos strong { font: 600 1.15rem/1.15 var(--cond); }
+.atalhos span { font-size: .86rem; color: var(--tinta-2); }
+@media (max-width: 440px) { .atalhos { grid-template-columns: 1fr 1fr; } }
 
 .miolo { padding-top: 28px; padding-bottom: 64px; }
 .trilha { font-size: .9rem; color: var(--tinta-3); margin: 0 0 12px; }

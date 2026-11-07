@@ -509,6 +509,7 @@ def main():
                        **{p: round(d["medio"], 2) for p, d in c["produtos"].items() if p in ("gasolina", "etanol", "diesel_s10", "diesel", "gnv")}}
                       for c in comb["cidades"]]
     env.globals["cidades_js"] = cidades_js
+    (SAIDA / "static" / "cidades.json").write_text(json.dumps(cidades_js, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     env.globals["rendes"] = []
 
     pagina("/", "inicio.html", 1.0)
