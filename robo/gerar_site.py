@@ -144,6 +144,8 @@ def montar_combustiveis():
     for k, prods in atual.items():
         for p, d in prods.items():
             d["var"] = variacao(d["medio"], previo[k].get(p))
+            s = sorted(series[k][p])
+            d["var4"] = variacao(d["medio"], s[-5][1]) if len(s) >= 5 else None
 
     postos = (ler_json(DADOS / "anp" / "postos.json") or {})
     postos = postos.get("cidades", {}) if postos.get("semana_fim") == fim else {}
@@ -182,7 +184,9 @@ def montar_combustiveis():
             c["pos_estado"], c["total_estado"] = i, len(com_g)
 
     brasil = {"produtos": atual.get(("brasil", "", ""), {}), "serie": series[("brasil", "", "")]}
-    return {"inicio": ultima["semana_inicio"], "fim": fim, "anterior": anterior, "semanas": semanas,
+    from datetime import timedelta
+    proxima = (date.fromisoformat(fim) + timedelta(days=9)).isoformat()
+    return {"inicio": ultima["semana_inicio"], "fim": fim, "anterior": anterior, "semanas": semanas, "proxima": proxima,
             "cidades": cidades, "estados": estados, "brasil": brasil}
 
 

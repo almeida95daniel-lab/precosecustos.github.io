@@ -71,3 +71,21 @@
 </section>
 {% endif %}
 {% endmacro %}
+
+{% macro tendencia(produtos, onde="") %}
+{% set g = produtos.get("gasolina") %}
+{% set d = produtos.get("diesel_s10") %}
+{% set usd = (moedas|selectattr("codigo", "equalto", "USD")|first) if moedas else none %}
+<section class="tendencia" aria-label="Tendência dos preços">
+  <h2>Tendência{{ " " ~ onde if onde }}</h2>
+  <ul>
+  {% for art, nome, x in [("a", "gasolina", g), ("o", "diesel S10", d)] if x and x.var4 is not none %}
+    <li>Em 4 semanas, {{ art }} {{ nome }} {% if x.var4 > 0.5 %}<strong>subiu {{ x.var4|num(1) }}%</strong>{% elif x.var4 < -0.5 %}<strong>caiu {{ (-x.var4)|num(1) }}%</strong>{% else %}ficou estável ({{ x.var4|num(1) }}%){% endif %}.</li>
+  {% endfor %}
+  {% if usd and usd.var30 is not none and usd.var30|abs >= 2 %}
+    <li>O dólar {{ "subiu" if usd.var30 > 0 else "caiu" }} {{ usd.var30|abs|num(1) }}% em 30 dias. Parte do preço dos combustíveis acompanha o mercado internacional, então {{ "a alta do dólar costuma pressionar os preços para cima" if usd.var30 > 0 else "a queda do dólar ajuda a segurar os preços" }} nas semanas seguintes.</li>
+  {% endif %}
+    <li>A próxima pesquisa da ANP deve sair por volta de {{ comb.proxima|data_br }}. O site atualiza sozinho no mesmo dia.</li>
+  </ul>
+</section>
+{% endmacro %}

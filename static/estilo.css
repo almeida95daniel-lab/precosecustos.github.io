@@ -191,3 +191,9 @@ button:hover { opacity: .9; }
 .afiliados ul { padding-left: 1.2em; }
 .afiliados li { margin: 6px 0; }
 @media (max-width: 480px) { .some-celular { display: none; } }
+
+/* ---------- tendência */
+.tendencia { background: var(--superficie); border-radius: var(--raio); padding: 4px 20px 8px; margin: 24px 0; max-width: 760px; }
+.tendencia h2 { margin-top: 14px; font-size: 1.4rem; }
+.tendencia ul { padding-left: 1.1em; margin: 8px 0; }
+.tendencia li { margin: 6px 0; }

@@ -13,6 +13,7 @@
 {{ m.placa(c.produtos, rodape="Variação em relação à semana anterior.") }}
 
 {{ m.veredito_etanol(c.razao, "em " ~ c.nome) }}
+{{ m.tendencia(c.produtos, "em " ~ c.nome) }}
 
 <h2>Resumo da semana</h2>
 {% if g %}

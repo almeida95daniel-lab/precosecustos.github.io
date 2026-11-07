@@ -7,6 +7,7 @@
 <p class="lead">Preços médios de {{ comb.cidades|length }} cidades, da pesquisa oficial da ANP de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}.</p>
 {{ m.busca() }}
 {{ m.placa(comb.brasil.produtos, rodape="Média do Brasil. Variação em relação à semana anterior.", ordem=["gasolina", "etanol", "diesel_s10", "glp"]) }}
+{{ m.tendencia(comb.brasil.produtos, "no Brasil") }}
 <p><a href="/combustivel/">Ver todos os estados e cidades</a>, <a href="/combustivel/etanol-ou-gasolina/">descobrir se o etanol compensa</a> ou ver o <a href="/gas-de-cozinha/">preço do gás de cozinha</a>.</p>
 {% else %}
 <p class="lead">Os dados de combustível aparecem aqui assim que o robô concluir a primeira coleta da ANP.</p>

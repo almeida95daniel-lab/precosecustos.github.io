@@ -10,6 +10,7 @@
 {{ m.busca() }}
 <p>Procurando o botijão? Veja o <a href="/gas-de-cozinha/">preço do gás de cozinha por estado</a>.</p>
 {{ m.placa(comb.brasil.produtos, rodape="Média do Brasil. Variação em relação à semana anterior.") }}
+{{ m.tendencia(comb.brasil.produtos, "no Brasil") }}
 
 {% set ests = comb.estados.values()|selectattr("produtos.gasolina", "defined")|sort(attribute="produtos.gasolina.medio")|list %}
 <h2>Preço por estado</h2>

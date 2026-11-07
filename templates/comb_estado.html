@@ -9,6 +9,7 @@
 <p class="lead">Média estadual e {{ est.cidades|length }} cidades pesquisadas pela ANP na semana de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}.</p>
 {% if est.produtos %}{{ m.placa(est.produtos, rodape="Média de " ~ est.nome ~ ". Variação em relação à semana anterior.") }}{% endif %}
 {{ m.veredito_etanol(est.razao, "na média de " ~ est.nome) }}
+{{ m.tendencia(est.produtos, "em " ~ est.nome) }}
 
 {% set com_g = est.cidades|selectattr("produtos.gasolina", "defined")|sort(attribute="produtos.gasolina.medio")|list %}
 {% if com_g %}
