@@ -49,11 +49,9 @@ img, svg { max-width: 100%; }
 .topo { background: var(--barra); color: #fff; position: sticky; top: 0; z-index: 30; }
 .topo-in, .miolo, .rodape-in { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
 .topo-in { display: flex; align-items: center; gap: 16px; min-height: 56px; }
-.marca { display: inline-flex; align-items: center; gap: 9px; color: #fff; text-decoration: none; font: 700 1.5rem/1 var(--cond); letter-spacing: .01em; white-space: nowrap; }
-.marca::before {
-  content: "R$"; display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 6px;
-  background: var(--destaque); color: #1A1D1F; font: 700 .95rem/1 var(--cond);
-}
+.marca { display: inline-flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; font: 700 1.65rem/1 var(--cond); letter-spacing: -.01em; white-space: nowrap; }
+.marca img { display: block; width: 44px; height: 44px; margin: -5px -4px -5px -8px; }
+.marca span { color: var(--destaque); }
 .topo-busca { margin-left: auto; color: #fff; text-decoration: none; font-weight: 500; font-size: .95rem; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; }
 .topo-busca:hover { border-color: var(--destaque); color: var(--destaque); }
 .nav-faixa { background: var(--superficie); border-bottom: 1px solid var(--linha); }

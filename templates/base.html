@@ -13,7 +13,14 @@
 <meta property="og:url" content="{{ cfg.url_base.rstrip('/') }}{{ url }}">
 <meta name="theme-color" content="#1A1D1F">
 {% if cfg.google_verificacao %}<meta name="google-site-verification" content="{{ cfg.google_verificacao }}">{% endif %}
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231A1D1F'/%3E%3Crect x='6' y='22' width='20' height='4' fill='%23FFC21A'/%3E%3Ctext x='16' y='19' font-family='Arial' font-weight='700' font-size='15' fill='%23fff' text-anchor='middle'%3ER$%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="/static/icone.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.png" type="image/png" sizes="48x48">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:image" content="{{ cfg.url_base.rstrip('/') }}/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -26,12 +33,13 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ cfg.google_analytics }}"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ cfg.google_analytics }}');</script>
 {% endif %}
+{% if url == "/" %}<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":{{ cfg.nome_site|tojson }},"url":{{ (cfg.url_base.rstrip('/') ~ '/')|tojson }},"logo":{{ (cfg.url_base.rstrip('/') ~ '/apple-touch-icon.png')|tojson }},"email":{{ cfg.email_contato|tojson }}},{"@type":"WebSite","name":{{ cfg.nome_site|tojson }},"url":{{ (cfg.url_base.rstrip('/') ~ '/')|tojson }},"inLanguage":"pt-BR"}]}</script>{% endif %}
 {% block cabeca %}{% endblock %}
 </head>
 <body>
 <header class="topo">
   <div class="topo-in">
-    <a class="marca" href="/">{{ cfg.nome_site }}</a>
+    <a class="marca" href="/" aria-label="{{ cfg.nome_site }}, página inicial"><img src="/static/icone.svg" width="34" height="34" alt="">Bolso<span>hoje</span></a>
     {% if comb %}<a class="topo-busca" href="/combustivel/#busca-cidade">Buscar cidade</a>{% endif %}
   </div>
   <div class="nav-faixa">
