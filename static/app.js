@@ -69,21 +69,59 @@
   }
   window.BH_CIDADES = [];
   function sem(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); }
+  function achar(lista, q, max) {
+    var ini = [], meio = [];
+    for (var i = 0; i < lista.length && ini.length < max; i++) {
+      var n = lista[i]._s || (lista[i]._s = sem(lista[i].n));
+      if (n.indexOf(q) === 0) ini.push(lista[i]); else if (meio.length < max && n.indexOf(q) > 0) meio.push(lista[i]);
+    }
+    return ini.concat(meio).slice(0, max);
+  }
   document.querySelectorAll("form.busca").forEach(function (f) {
-    var campo = f.querySelector("input");
-    var msg = f.querySelector(".busca-msg");
+    var campo = f.querySelector("input"), msg = f.querySelector(".busca-msg"), caixa = f.querySelector(".sugestoes");
     if (!campo || !msg) return;
+    var achados = [], ativo = -1;
     campo.addEventListener("focus", cidades, { once: true });
+    function fechar() { if (caixa) { caixa.hidden = true; caixa.innerHTML = ""; } ativo = -1; }
+    function marcar(i) {
+      var itens = caixa.querySelectorAll("a");
+      itens.forEach(function (a, k) { a.classList.toggle("ativo", k === i); });
+      ativo = i;
+    }
+    if (caixa) {
+      campo.addEventListener("input", function () {
+        msg.textContent = "";
+        var q = sem(campo.value);
+        if (q.length < 2) { fechar(); return; }
+        cidades().then(function (lista) {
+          if (sem(campo.value) !== q) return;
+          achados = achar(lista, q, 8);
+          if (!achados.length) { fechar(); return; }
+          caixa.innerHTML = achados.map(function (c) {
+            return '<li role="option"><a href="' + c.u + '">' + c.n + " <small>" + c.uf + "</small></a></li>";
+          }).join("");
+          caixa.hidden = false; ativo = -1;
+        });
+      });
+      campo.addEventListener("keydown", function (ev) {
+        if (caixa.hidden) return;
+        var n = achados.length;
+        if (ev.key === "ArrowDown") { ev.preventDefault(); marcar((ativo + 1) % n); }
+        else if (ev.key === "ArrowUp") { ev.preventDefault(); marcar((ativo - 1 + n) % n); }
+        else if (ev.key === "Enter" && ativo >= 0) { ev.preventDefault(); location.href = achados[ativo].u; }
+        else if (ev.key === "Escape") fechar();
+      });
+      document.addEventListener("click", function (ev) { if (!f.contains(ev.target)) fechar(); });
+    }
     f.addEventListener("submit", function (ev) {
       ev.preventDefault();
       var q = sem(campo.value.replace(/\s*\(..\)\s*$/, "").replace(/\s*-\s*..$/, ""));
       if (!q) { campo.focus(); return; }
       cidades().then(function (lista) {
         var exato = lista.find(function (c) { return sem(c.n) === q || sem(c.n + " " + c.uf) === q; });
-        var parcial = exato || lista.find(function (c) { return sem(c.n).indexOf(q) === 0; }) ||
-          lista.find(function (c) { return sem(c.n).indexOf(q) >= 0; });
+        var parcial = exato || achar(lista, q, 1)[0];
         if (parcial) { location.href = parcial.u; return; }
-        msg.textContent = "A ANP não pesquisa preços em \u201c" + campo.value + "\u201d. Procure uma cidade próxima ou veja a média do seu estado.";
+        msg.textContent = "A ANP não pesquisa preços em \u201c" + campo.value + "\u201d. Tente uma cidade vizinha ou a média do seu estado.";
       });
     });
   });

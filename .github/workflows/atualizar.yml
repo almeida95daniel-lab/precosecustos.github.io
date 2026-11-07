@@ -2,9 +2,13 @@ name: Atualizar dados e publicar site
 
 on:
   schedule:
-    # Horários em UTC: 07:17 e 19:17 em Brasília, todos os dias.
+    # Horários em UTC (Brasília = UTC-3): 07:17, 11:17, 14:17 (após a PTAX) e 19:17.
+    # Segunda a quarta também às 16:47, quando a ANP costuma publicar a pesquisa da semana.
     - cron: "17 10 * * *"
+    - cron: "17 14 * * *"
+    - cron: "17 17 * * *"
     - cron: "17 22 * * *"
+    - cron: "47 19 * * 1-3"
   workflow_dispatch:   # botão "Run workflow" para rodar na hora
   push:
     branches: [main]
@@ -35,21 +39,15 @@ jobs:
       - name: Instalar dependências
         run: pip install -r requirements.txt
 
-      - name: Coletar combustíveis (ANP)
-        run: python robo/coletar_anp.py
-        continue-on-error: true
-
-      - name: Coletar câmbio, juros e inflação (Banco Central)
-        run: python robo/coletar_bcb.py
-        continue-on-error: true
-
-      - name: Coletar moedas (PTAX e BCE)
-        run: python robo/coletar_moedas.py
-        continue-on-error: true
-
-      - name: Coletar energia (ANEEL)
-        run: python robo/coletar_aneel.py
-        continue-on-error: true
+      - name: Coletar tudo em paralelo (ANP, Banco Central, moedas, ANEEL)
+        run: |
+          python robo/coletar_anp.py    > anp.log 2>&1 & a=$!
+          python robo/coletar_bcb.py    > bcb.log 2>&1 & b=$!
+          python robo/coletar_moedas.py > moe.log 2>&1 & c=$!
+          python robo/coletar_aneel.py  > ane.log 2>&1 & d=$!
+          for p in $a $b $c $d; do wait $p || echo "::warning::um coletor falhou (pid $p)"; done
+          for f in anp bcb moe ane; do echo "::group::$f"; cat $f.log; echo "::endgroup::"; done
+          rm -f *.log
 
       - name: Guardar os dados novos no repositório
         run: |

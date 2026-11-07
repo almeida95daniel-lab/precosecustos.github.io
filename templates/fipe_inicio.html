@@ -6,13 +6,17 @@
 {% block conteudo %}
 {{ mc.trilha([("/", "Início"), (None, "Tabela FIPE")]) }}
 <h1>Tabela FIPE</h1>
-<p class="lead">Preço médio de carros e motos usados e zero km, pela tabela de {{ ref.mes }}. Procure pelo modelo ou escolha a marca.</p>
+<p class="lead">Tabela de {{ ref.mes }}. Digite o modelo ou escolha a marca.</p>
 
 <form class="busca" role="search" id="fipe-busca" onsubmit="return false">
   <label class="so-leitor" for="fipe-q">Modelo do veículo</label>
   <input id="fipe-q" type="search" placeholder="Ex.: Onix 1.0, Gol, CG 160" autocomplete="off">
 </form>
 <div id="fipe-res" aria-live="polite"></div>
+{% set populares = ["Fiat", "Volkswagen", "VW - VolksWagen", "Chevrolet", "GM - Chevrolet", "Toyota", "Hyundai", "Renault", "Jeep", "Honda", "HONDA", "Nissan", "BYD", "YAMAHA"] %}
+<ul class="chips chips-claros" aria-label="Marcas mais procuradas">
+{% for tipo, info in fipe.items() %}{% for marca in info.marcas if marca.nome in populares %}<li><a href="{{ marca.url }}">{{ marca.nome|title if marca.nome.isupper() else marca.nome }}{% if tipo == "motos" %} (motos){% endif %}</a></li>{% endfor %}{% endfor %}
+</ul>
 
 {% for tipo, info in fipe.items() %}
 <h2>{{ info.nome }}</h2>

@@ -13,23 +13,21 @@
 </div>
 {% endmacro %}
 
-{% macro busca(rotulo="Qual é a sua cidade?") %}
-<form class="busca" role="search" action="/combustivel/">
+{% macro busca(rotulo="Digite sua cidade", botao="Ver preços") %}
+<form class="busca" role="search" action="/combustivel/" autocomplete="off">
   <label class="so-leitor" for="busca-cidade">{{ rotulo }}</label>
-  <input id="busca-cidade" type="search" list="lista-cidades" placeholder="{{ rotulo }}" autocomplete="off">
-  <datalist id="lista-cidades">
-    {% for c in cidades_js %}<option value="{{ c.n }} ({{ c.uf }})">{% endfor %}
-  </datalist>
-  <button type="submit">Ver preços</button>
+  <input id="busca-cidade" type="search" placeholder="{{ rotulo }}" autocomplete="off" aria-autocomplete="list" aria-controls="sugestoes-cidade">
+  <button type="submit">{{ botao }}</button>
+  <ul class="sugestoes" id="sugestoes-cidade" role="listbox" hidden></ul>
   <p class="busca-msg nota" aria-live="polite" style="flex-basis:100%;margin:0"></p>
 </form>
 {% endmacro %}
 
 {% macro faq(perguntas) %}
 <section class="faq">
-  <h2>Perguntas frequentes</h2>
+  <h2>Dúvidas comuns</h2>
   {% for p, r in perguntas %}
-  <details{% if loop.first %} open{% endif %}><summary>{{ p }}</summary><p>{{ r }}</p></details>
+  <details><summary>{{ p }}</summary><p>{{ r }}</p></details>
   {% endfor %}
 </section>
 <script type="application/ld+json">

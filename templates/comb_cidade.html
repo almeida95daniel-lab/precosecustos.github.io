@@ -8,7 +8,8 @@
 {% block conteudo %}
 {{ m.trilha([("/", "Início"), ("/combustivel/", "Combustível"), (est.url, est.nome), (None, c.nome)]) }}
 <h1>Preço dos combustíveis em {{ c.nome }} ({{ c.uf }})</h1>
-<p class="lead">Médias da pesquisa semanal da ANP em {{ c.nome }}, de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}.</p>
+<p class="lead">Pesquisa da ANP de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}.</p>
+<ul class="chips chips-claros pular" aria-label="Nesta página">{% if c.postos.get("gasolina") %}<li><a href="#postos">Postos mais baratos</a></li>{% endif %}<li><a href="#historico">Histórico</a></li><li><a href="#abastecer">Quanto custa encher o tanque</a></li><li><a href="{{ est.url }}">Outras cidades de {{ est.uf }}</a></li></ul>
 
 {{ m.placa(c.produtos, rodape="Variação em relação à semana anterior.") }}
 
@@ -18,7 +19,7 @@
 <h2>Resumo da semana</h2>
 {% if g %}
 <p>O litro da gasolina comum em {{ c.nome }} saiu em média por <strong>{{ g.medio|brl }}</strong>{% if g.postos %} nos {{ g.postos }} postos pesquisados{% endif %}.
-{% if g.minimo and g.maximo and g.maximo > g.minimo %}O preço mais baixo encontrado foi {{ g.minimo|brl }} e o mais alto, {{ g.maximo|brl }} — uma diferença de {{ (g.maximo - g.minimo)|brl }} por litro, ou {{ ((g.maximo - g.minimo)*40)|brl }} num tanque de 40 litros.{% endif %}{{ ' ' }}
+{% if g.minimo and g.maximo and g.maximo > g.minimo %}O preço mais baixo encontrado foi {{ g.minimo|brl }} e o mais alto, {{ g.maximo|brl }}. A diferença é de {{ (g.maximo - g.minimo)|brl }} por litro, ou {{ ((g.maximo - g.minimo)*40)|brl }} num tanque de 40 litros.{% endif %}{{ ' ' }}
 {% if eg %}
 {% set dif = (g.medio / eg.medio - 1) * 100 %}
 {% if dif|abs < 0.5 %}O valor está praticamente igual à média de {{ est.nome }} ({{ eg.medio|brl }}).{% elif dif < 0 %}É {{ (-dif)|num(1) }}% mais barato que a média de {{ est.nome }} ({{ eg.medio|brl }}).{% else %}É {{ dif|num(1) }}% mais caro que a média de {{ est.nome }} ({{ eg.medio|brl }}).{% endif %}{{ ' ' }}
@@ -28,11 +29,11 @@
 
 <div class="tabela-rolagem">
 <table>
-  <thead><tr><th>Combustível</th><th class="n">Médio</th><th class="n">Mínimo</th><th class="n">Máximo</th><th class="n">Postos</th><th>Semana anterior</th></tr></thead>
+  <thead><tr><th>Combustível</th><th class="n">Médio</th><th class="n some-celular">Mínimo</th><th class="n some-celular">Máximo</th><th class="n some-celular">Postos</th><th>Na semana</th></tr></thead>
   <tbody>
   {% for chave, info in PRODUTOS.items() if chave in c.produtos %}
   {% set d = c.produtos[chave] %}
-  <tr><td>{{ info.nome }}</td><td class="n">{{ d.medio|brl }}</td><td class="n">{{ d.minimo|brl }}</td><td class="n">{{ d.maximo|brl }}</td><td class="n">{{ d.postos or "–" }}</td><td>{{ d.var|seta }}</td></tr>
+  <tr><td>{{ info.nome }}</td><td class="n"><strong>{{ d.medio|brl }}</strong></td><td class="n some-celular">{{ d.minimo|brl }}</td><td class="n some-celular">{{ d.maximo|brl }}</td><td class="n some-celular">{{ d.postos or "–" }}</td><td>{{ d.var|seta }}</td></tr>
   {% endfor %}
   </tbody>
 </table>
@@ -40,14 +41,14 @@
 
 {% set lista = c.postos.get("gasolina") %}
 {% if lista and lista.postos %}
-<h2>Postos com a gasolina mais barata em {{ c.nome }}</h2>
+<h2 id="postos">Postos com a gasolina mais barata em {{ c.nome }}</h2>
 <p class="nota">Preços coletados pela ANP entre {{ comb.inicio|data_br }} e {{ comb.fim|data_br }} em {{ lista.total }} postos. Confirme na bomba: o preço pode ter mudado desde a coleta.</p>
 <div class="tabela-rolagem">
 <table>
-  <thead><tr><th>Posto</th><th>Endereço</th><th class="n">Gasolina</th><th class="n">Coleta</th></tr></thead>
+  <thead><tr><th>Posto</th><th class="n">Gasolina</th><th class="n some-celular">Coleta</th></tr></thead>
   <tbody>
   {% for p in lista.postos %}
-  <tr><td>{{ p.nome }}{% if p.bandeira and p.bandeira|lower not in ("branca", "bandeira branca") %}<br><span class="meta">{{ p.bandeira }}</span>{% endif %}</td><td>{{ p.endereco }}{% if p.bairro %}<br><span class="meta">{{ p.bairro }}</span>{% endif %}</td><td class="n">{{ p.preco|brl(2 if ((p.preco*1000)|round|int) % 10 == 0 else 3) }}</td><td class="n">{{ p.coleta }}</td></tr>
+  <tr><td><strong>{{ p.nome }}</strong>{% if p.bandeira and p.bandeira|lower not in ("branca", "bandeira branca") %} <span class="meta">· {{ p.bandeira }}</span>{% endif %}<br><span class="meta">{{ p.endereco }}{% if p.bairro %}, {{ p.bairro }}{% endif %}</span></td><td class="n"><strong>{{ p.preco|brl(2 if ((p.preco*1000)|round|int) % 10 == 0 else 3) }}</strong></td><td class="n some-celular">{{ p.coleta }}</td></tr>
   {% endfor %}
   </tbody>
 </table>
@@ -57,10 +58,10 @@
 <h3>Etanol mais barato</h3>
 <div class="tabela-rolagem">
 <table>
-  <thead><tr><th>Posto</th><th>Endereço</th><th class="n">Etanol</th></tr></thead>
+  <thead><tr><th>Posto</th><th class="n">Etanol</th></tr></thead>
   <tbody>
   {% for p in le.postos[:5] %}
-  <tr><td>{{ p.nome }}</td><td>{{ p.endereco }}{% if p.bairro %}<br><span class="meta">{{ p.bairro }}</span>{% endif %}</td><td class="n">{{ p.preco|brl(2 if ((p.preco*1000)|round|int) % 10 == 0 else 3) }}</td></tr>
+  <tr><td><strong>{{ p.nome }}</strong><br><span class="meta">{{ p.endereco }}{% if p.bairro %}, {{ p.bairro }}{% endif %}</span></td><td class="n">{{ p.preco|brl(2 if ((p.preco*1000)|round|int) % 10 == 0 else 3) }}</td></tr>
   {% endfor %}
   </tbody>
 </table>
@@ -70,13 +71,13 @@
 
 {% set hist = serie_semanal(c.serie, "gasolina") %}
 {% if hist|length > 1 %}
-<h2>Histórico do preço da gasolina em {{ c.nome }}</h2>
+<h2 id="historico">Histórico do preço da gasolina em {{ c.nome }}</h2>
 {{ grafico(hist, titulo="Gasolina comum, preço médio por litro, semana a semana") }}
 {% set he = serie_semanal(c.serie, "etanol") %}
 {% if he|length > 1 %}{{ grafico(he, titulo="Etanol, preço médio por litro, semana a semana") }}{% endif %}
 {% endif %}
 
-<h2>Quanto custa abastecer em {{ c.nome }}</h2>
+<h2 id="abastecer">Quanto custa abastecer em {{ c.nome }}</h2>
 <div class="tabela-rolagem">
 <table>
   <thead><tr><th>Tanque</th>{% for k in ("gasolina", "etanol", "diesel_s10") if k in c.produtos %}<th class="n">{{ PRODUTOS[k].nome }}</th>{% endfor %}</tr></thead>

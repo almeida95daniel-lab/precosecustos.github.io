@@ -5,6 +5,7 @@ Uso: python robo/gerar_site.py
 import csv
 import html
 import re
+import hashlib
 import json
 import shutil
 import sys
@@ -486,12 +487,14 @@ def main():
                        comb=comb, bcb=bcb, aneel=aneel, ano=date.today().year, regra=CONFIG["regra_etanol"],
                        tem_energia=bool(energia and (energia["atual"] or energia["principais"])), energia=energia, moedas=moedas, regras=regras, fipe=fipe,
                        exemplos_trabalho=exemplos_trabalho(regras) if regras else [],
-                       calc_inss_teto=calc_inss(regras["inss"]["faixas"][-1][0], regras) if regras else 0)
+                       calc_inss_teto=calc_inss(regras["inss"]["faixas"][-1][0], regras) if regras else 0,
+                       versao=hashlib.md5(((RAIZ / "static" / "estilo.css").read_bytes() + (RAIZ / "static" / "app.js").read_bytes())).hexdigest()[:8])
     mapa = []
     prefixo = CONFIG.get("caminho_base", "").rstrip("/")
 
     def com_prefixo(pagina_html):
-        """Site publicado numa subpasta (ex.: usuario.github.io/projeto): ajusta links internos."""
+        """Enxuga o HTML (tira recuo e linhas vazias) e, se o site estiver numa subpasta, ajusta os links."""
+        pagina_html = "\n".join(l.strip() for l in pagina_html.splitlines() if l.strip())
         if not prefixo:
             return pagina_html
         return re.sub(r'((?:href|src|action)=")/(?!/)', r"\1" + prefixo + "/", pagina_html)
