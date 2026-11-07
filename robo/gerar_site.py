@@ -325,6 +325,45 @@ def nome_valor(v):
     return str(v)
 
 
+# ================================================================ tabela FIPE
+NOME_TIPO = {"carros": ("Carros", "carro"), "motos": ("Motos", "moto")}
+
+
+def montar_fipe():
+    """{tipo: {"ref", "marcas": [ {nome, slug, url, modelos: [...]} ]}} a partir de dados/fipe/<tipo>.json."""
+    saida = {}
+    for tipo in ("carros", "motos"):
+        base = ler_json(DADOS / "fipe" / f"{tipo}.json")
+        if not base or not base.get("veiculos"):
+            continue
+        por_marca = defaultdict(lambda: defaultdict(list))
+        for marca, modelo, cod, ano, comb, valor, anterior in base["veiculos"]:
+            por_marca[marca][modelo].append({"ano": "Zero km" if ano == 32000 else str(ano), "ordem": ano,
+                                             "combustivel": comb, "valor": valor, "codigo_fipe": cod,
+                                             "var": variacao(valor, anterior)})
+        marcas = []
+        for marca, modelos_d in por_marca.items():
+            nome_marca = marca.replace("VW - VolksWagen", "Volkswagen").replace("GM - Chevrolet", "Chevrolet")
+            mslug = slug(nome_marca)
+            modelos, usados = [], set()
+            for modelo, anos in sorted(modelos_d.items(), key=lambda kv: kv[0].lower()):
+                anos.sort(key=lambda x: -x["ordem"])
+                oslug = slug(modelo)[:80].strip("-")
+                n = 2
+                while oslug in usados:
+                    oslug = f"{slug(modelo)[:76]}-{n}"
+                    n += 1
+                usados.add(oslug)
+                valores = [x["valor"] for x in anos]
+                modelos.append({"nome": modelo, "slug": oslug, "anos": anos, "min": min(valores), "max": max(valores),
+                                "url": f"/tabela-fipe/{tipo}/{mslug}/{oslug}/", "familia": modelo.split()[0].lower()})
+            marcas.append({"nome": nome_marca, "slug": mslug, "url": f"/tabela-fipe/{tipo}/{mslug}/", "modelos": modelos})
+        marcas.sort(key=lambda x: x["nome"].lower())
+        saida[tipo] = {"ref": base["referencia"], "marcas": marcas, "nome": NOME_TIPO[tipo][0],
+                       "singular": NOME_TIPO[tipo][1], "total": sum(len(x["modelos"]) for x in marcas)}
+    return saida
+
+
 # ================================================================ moedas
 def montar_moedas(bcb):
     dados = (ler_json(DADOS / "moedas.json") or {}).get("moedas", {})
@@ -437,6 +476,7 @@ def main():
     energia = montar_energia(aneel)
     moedas = montar_moedas(bcb)
     regras = ler_json(RAIZ / "regras.json")
+    fipe = montar_fipe()
     hoje = date.today().isoformat()
 
     env = Environment(loader=FileSystemLoader(RAIZ / "templates"), autoescape=select_autoescape(["html"]),
@@ -444,7 +484,7 @@ def main():
     env.filters.update(brl=brl, num=num, data_br=data_br, seta=seta, json=lambda o: Markup(json.dumps(o, ensure_ascii=False)))
     env.globals.update(cfg=CONFIG, PRODUTOS=PRODUTOS, UFS=UFS, grafico=grafico, serie_semanal=serie_semanal,
                        comb=comb, bcb=bcb, aneel=aneel, ano=date.today().year, regra=CONFIG["regra_etanol"],
-                       tem_energia=bool(energia and (energia["atual"] or energia["principais"])), energia=energia, moedas=moedas, regras=regras,
+                       tem_energia=bool(energia and (energia["atual"] or energia["principais"])), energia=energia, moedas=moedas, regras=regras, fipe=fipe,
                        exemplos_trabalho=exemplos_trabalho(regras) if regras else [],
                        calc_inss_teto=calc_inss(regras["inss"]["faixas"][-1][0], regras) if regras else 0)
     mapa = []
@@ -506,6 +546,17 @@ def main():
             pagina("/calculadoras/corrigir-pela-inflacao/", "calc_inflacao.html", 0.8)
     if comb and comb["brasil"]["produtos"].get("glp"):
         pagina("/gas-de-cozinha/", "gas.html", 0.9)
+    if fipe:
+        pagina("/tabela-fipe/", "fipe_inicio.html", 0.9)
+        busca = []
+        for tipo, info in fipe.items():
+            for marca in info["marcas"]:
+                pagina(marca["url"], "fipe_marca.html", 0.7, tipo=tipo, info=info, marca=marca)
+                for mod in marca["modelos"]:
+                    irmaos = [x for x in marca["modelos"] if x["familia"] == mod["familia"] and x is not mod][:12]
+                    pagina(mod["url"], "fipe_modelo.html", 0.6, tipo=tipo, info=info, marca=marca, mod=mod, irmaos=irmaos)
+                    busca.append([marca["nome"], mod["nome"], mod["url"], round(mod["anos"][0]["valor"])])
+        (SAIDA / "static" / "fipe-busca.json").write_text(json.dumps(busca, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     if moedas:
         pagina("/moedas/", "moedas.html", 0.9)
         for m in moedas:

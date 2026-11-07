@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% set ref = (fipe.values()|first).ref %}
+{% block titulo %}Tabela FIPE {{ ref.mes|replace(" de ", "/") }}: preço de carros e motos | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Consulte a Tabela FIPE de {{ ref.mes }}: preço médio de carros e motos por marca, modelo e ano, com a variação em relação ao mês anterior.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), (None, "Tabela FIPE")]) }}
+<h1>Tabela FIPE</h1>
+<p class="lead">Preço médio de carros e motos usados e zero km, pela tabela de {{ ref.mes }}. Procure pelo modelo ou escolha a marca.</p>
+
+<form class="busca" role="search" id="fipe-busca" onsubmit="return false">
+  <label class="so-leitor" for="fipe-q">Modelo do veículo</label>
+  <input id="fipe-q" type="search" placeholder="Ex.: Onix 1.0, Gol, CG 160" autocomplete="off">
+</form>
+<div id="fipe-res" aria-live="polite"></div>
+
+{% for tipo, info in fipe.items() %}
+<h2>{{ info.nome }}</h2>
+<p class="nota">{{ info.total|num(0) }} modelos com preço nesta tabela.</p>
+<ul class="lista-links">
+  {% for marca in info.marcas %}<li><a href="{{ marca.url }}">{{ marca.nome }}</a><span class="meta">{{ marca.modelos|length }}</span></li>{% endfor %}
+</ul>
+{% endfor %}
+
+{{ mc.faq([
+  ("O que é a Tabela FIPE?", "É o preço médio de veículos no mercado nacional, calculado todo mês pela Fundação Instituto de Pesquisas Econômicas (FIPE). Serve de referência para compra e venda, seguros, financiamentos e o cálculo do IPVA em vários estados."),
+  ("O preço da FIPE é o preço de venda?", "Não exatamente. É uma média de anúncios e negócios. O valor de um carro específico varia com a quilometragem, o estado de conservação, os opcionais e a região."),
+  ("Quando a Tabela FIPE é atualizada?", "Uma vez por mês, normalmente na primeira semana. Este site busca os valores novos automaticamente.")
+]) }}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var dados = null, campo = document.getElementById("fipe-q"), res = document.getElementById("fipe-res");
+  var base = document.querySelector('link[rel="stylesheet"][href*="/static/"]').getAttribute("href").replace("estilo.css", "");
+  function sem(s) { return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+  function carregar() {
+    if (dados) return Promise.resolve(dados);
+    return fetch(base + "fipe-busca.json").then(function (r) { return r.json(); }).then(function (d) { dados = d; return d; });
+  }
+  function mostrar() {
+    var q = sem(campo.value.trim());
+    if (q.length < 2) { res.innerHTML = ""; return; }
+    carregar().then(function (d) {
+      var termos = q.split(/\s+/);
+      var achados = d.filter(function (x) { var t = sem(x[0] + " " + x[1]); return termos.every(function (p) { return t.indexOf(p) >= 0; }); }).slice(0, 30);
+      if (!achados.length) { res.innerHTML = '<p class="nota">Nenhum modelo encontrado. Tente só o nome principal, como "Onix" ou "Strada".</p>'; return; }
+      res.innerHTML = '<div class="tabela-rolagem"><table><thead><tr><th>Modelo</th><th class="n">Mais recente</th></tr></thead><tbody>' +
+        achados.map(function (x) { return '<tr><td><a href="' + x[2] + '">' + x[0] + " " + x[1] + '</a></td><td class="n">' + BH.brl(x[3], 0) + "</td></tr>"; }).join("") +
+        "</tbody></table></div>";
+    });
+  }
+  campo.addEventListener("focus", carregar, { once: true });
+  campo.addEventListener("input", mostrar);
+})();
+</script>
+{% endblock %}

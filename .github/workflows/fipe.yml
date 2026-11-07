@@ -2,14 +2,9 @@ name: Coletar Tabela FIPE
 
 on:
   schedule:
-    # Duas vezes por dia, em horários sem a outra coleta (UTC).
-    - cron: "41 4 * * *"
-    - cron: "41 15 * * *"
+    # Todo dia de manhã (UTC): pega a tabela nova assim que o dataset publicar.
+    - cron: "41 9 * * *"
   workflow_dispatch:
-    inputs:
-      minutos:
-        description: "Minutos de coleta nesta execução"
-        default: "25"
 
 permissions:
   contents: write
@@ -21,7 +16,7 @@ concurrency:
 jobs:
   fipe:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -33,8 +28,6 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Coletar
-        env:
-          FIPE_MINUTOS: ${{ github.event.inputs.minutos || '25' }}
         run: python robo/coletar_fipe.py
 
       - name: Guardar o progresso
@@ -43,7 +36,7 @@ jobs:
           git config user.email "robo@users.noreply.github.com"
           git add dados/fipe
           if git diff --cached --quiet; then echo "Nada novo."; exit 0; fi
-          git commit -m "FIPE: progresso da coleta $(date -u +'%Y-%m-%d %H:%M') UTC"
+          git commit -m "FIPE: tabela atualizada $(date -u +'%Y-%m-%d') UTC"
           for i in 1 2 3; do
             git pull --rebase -X theirs origin main && git push && exit 0
             sleep 15

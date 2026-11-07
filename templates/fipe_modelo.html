@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% set topo = mod.anos[0] %}
+{% set nome = marca.nome ~ " " ~ mod.nome %}
+{% block titulo %}Tabela FIPE {{ nome }}: {{ topo.valor|brl(0) }} ({{ info.ref.mes|replace(" de ", "/") }}) | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Preço FIPE do {{ nome }} em {{ info.ref.mes }}: {% for a in mod.anos[:3] %}{{ a.ano }} por {{ a.valor|brl(0) }}{{ ", " if not loop.last }}{% endfor %}. Veja todos os anos, o código FIPE e a variação do mês.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), ("/tabela-fipe/", "Tabela FIPE"), (marca.url, marca.nome), (None, mod.nome)]) }}
+<h1>Tabela FIPE {{ nome }}</h1>
+<p class="lead">Preço médio na tabela de {{ info.ref.mes }}{% if topo.codigo_fipe %}. Código FIPE {{ topo.codigo_fipe }}{% endif %}.</p>
+
+<div class="placa">
+  {% for a in mod.anos[:3] %}
+  <div class="placa-linha">
+    <span class="placa-nome">{{ a.ano }}{% if a.combustivel %} · {{ a.combustivel }}{% endif %}</span>
+    <span class="placa-preco"><small>R$</small>{{ a.valor|num(0) }}</span>
+    <span class="placa-sub">{% if a.var is not none %}{{ a.var|seta }} no mês{% else %}tabela de {{ info.ref.mes }}{% endif %}</span>
+  </div>
+  {% endfor %}
+</div>
+
+{% if mod.anos|length > 1 %}
+<h2>Preço por ano</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Ano</th><th class="some-celular">Combustível</th><th class="n">Preço FIPE</th><th>No mês</th></tr></thead>
+  <tbody>{% for a in mod.anos %}<tr><td>{{ a.ano }}</td><td class="some-celular">{{ a.combustivel }}</td><td class="n">{{ a.valor|brl(0) }}</td><td>{{ a.var|seta }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% set novos = mod.anos|rejectattr("ano", "equalto", "Zero km")|list %}
+{% if novos|length >= 4 %}
+{% set a0, a3 = novos[0], novos[3] %}
+<p>Um {{ mod.nome }} {{ a3.ano }} vale {{ ((1 - a3.valor / a0.valor) * 100)|num(0) }}% menos que o {{ a0.ano }}, uma perda média de {{ ((a0.valor - a3.valor) / 3)|brl(0) }} por ano de uso.</p>
+{% endif %}
+{% endif %}
+
+<h2>Custos de ter um {{ mod.nome }}</h2>
+<ul>
+  <li><strong>IPVA:</strong> com alíquota de 4% (como em São Paulo), seria cerca de {{ (topo.valor * 0.04)|brl(0) }} por ano; com 2% (como em Santa Catarina), cerca de {{ (topo.valor * 0.02)|brl(0) }}. A alíquota e a base de cálculo variam por estado; confira na Secretaria da Fazenda do seu estado.</li>
+  {% if info.singular == "carro" %}<li><strong>Combustível:</strong> veja o preço da gasolina e do etanol na sua cidade na <a href="/combustivel/">página de combustíveis</a>.</li>{% endif %}
+  <li><strong>Financiamento:</strong> compare com quanto o mesmo dinheiro <a href="/quanto-rende/">renderia aplicado</a>.</li>
+</ul>
+
+{% if irmaos %}
+<h2>Outras versões de {{ mod.familia|capitalize }}</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Modelo</th><th class="n">Preço FIPE</th></tr></thead>
+  <tbody>{% for x in irmaos %}<tr><td><a href="{{ x.url }}">{{ marca.nome }} {{ x.nome }}</a></td><td class="n">{% if x.min == x.max %}{{ x.min|brl(0) }}{% else %}{{ x.min|brl(0) }} a {{ x.max|brl(0) }}{% endif %}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+<p><a href="{{ marca.url }}">Todos os modelos {{ marca.nome }}</a></p>
+
+{{ mc.faq([
+  ("Quanto custa um " ~ nome ~ " na Tabela FIPE?", "Na tabela de " ~ info.ref.mes ~ ", o " ~ nome ~ " " ~ topo.ano ~ " vale em média " ~ topo.valor|brl(0) ~ "."),
+  ("O preço FIPE é o que vou pagar?", "É uma média de mercado. Quilometragem, conservação, opcionais e região mudam o preço de um carro específico, para mais ou para menos."),
+  ("Com que frequência o preço é atualizado?", "Todo mês. Este site atualiza os valores automaticamente quando a FIPE publica a tabela nova.")
+]) }}
+<p class="nota">Fonte: Tabela FIPE de {{ info.ref.mes }}. Valores de referência; não substituem a avaliação do veículo.</p>
+{% endblock %}

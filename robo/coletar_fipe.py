@@ -1,263 +1,116 @@
-"""Robô da Tabela FIPE: preço médio de carros e motos.
+"""Robô da Tabela FIPE.
 
-A tabela completa tem dezenas de milhares de preços, e a FIPE limita o ritmo de
-consultas. Por isso o robô trabalha em etapas: cada execução consulta durante
-alguns minutos (FIPE_MINUTOS), salva o progresso e continua na próxima.
-Quando a FIPE publica o mês novo, ele atualiza os preços e guarda o valor do
-mês anterior para mostrar a variação.
+Fonte: dataset público fipex-labs/dataset (licença CC0), que publica todo mês a
+Tabela FIPE completa (carros, motos e caminhões) em TSV, em pastas AAAA/MM.
+O robô baixa os dois meses mais recentes (o atual e o anterior, para a variação)
+e grava um resumo por tipo de veículo em dados/fipe/.
 
-Fonte principal: API pública do site oficial (veiculos.fipe.org.br).
-Reserva: API gratuita da Parallelum (limite de 500 consultas por dia).
-
-Uso: FIPE_MINUTOS=20 python robo/coletar_fipe.py
+Uso: python robo/coletar_fipe.py            (baixa do GitHub)
+     python robo/coletar_fipe.py PASTA       (usa uma cópia local do dataset, para teste)
 """
-import json
-import os
+import csv
+import io
+import re
+import subprocess
 import sys
-import time
+import tempfile
 from datetime import date
+from pathlib import Path
 
-import requests
+sys.path.insert(0, str(Path(__file__).parent))
+from comum import DADOS, ler_json, salvar_json
 
-sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent))
-from comum import DADOS, UA, ler_json, numero, salvar_json
-
+REPO = "https://github.com/fipex-labs/dataset"
 PASTA = DADOS / "fipe"
-TIPOS = {"carros": (1, "carro"), "motos": (2, "moto")}
-ANO_MINIMO = 2000  # anos-modelo mais antigos ficam de fora (pouca procura)
-PRIORIDADE = {
-    "carros": ["Fiat", "VW - VolksWagen", "GM - Chevrolet", "Toyota", "Hyundai", "Renault", "Honda", "Jeep",
-               "Nissan", "Ford", "Peugeot", "Citroën", "Caoa Chery", "BYD", "Mitsubishi", "Kia Motors", "GWM",
-               "Volvo", "BMW", "Mercedes-Benz", "Audi", "Land Rover", "Suzuki", "RAM", "Chery"],
-    "motos": ["HONDA", "YAMAHA", "SUZUKI", "KAWASAKI", "BMW", "HARLEY-DAVIDSON", "TRIUMPH", "ROYAL ENFIELD",
-              "HAOJUE", "SHINERAY", "DAFRA", "KTM", "DUCATI", "BAJAJ"],
-}
+ANO_MINIMO = 2000
+MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto",
+         "setembro", "outubro", "novembro", "dezembro"]
+TIPO = {"1": "carros", "carro": "carros", "carros": "carros", "automovel": "carros", "automóvel": "carros",
+        "2": "motos", "moto": "motos", "motos": "motos"}
 
 
-class Limite(Exception):
-    """A fonte pediu para parar (limite de consultas ou bloqueio)."""
+def git(*args, cwd=None):
+    r = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True)
+    if r.returncode:
+        raise RuntimeError(f"git {' '.join(args)}: {r.stderr.strip()[:300]}")
+    return r.stdout
 
 
-# ---------------------------------------------------------------- fontes
-class FipeOficial:
-    nome = "FIPE (veiculos.fipe.org.br)"
-    BASE = "https://veiculos.fipe.org.br/api/veiculos/"
-
-    def __init__(self):
-        self.s = requests.Session()
-        self.s.headers.update({"User-Agent": UA, "Referer": "https://veiculos.fipe.org.br/",
-                               "Origin": "https://veiculos.fipe.org.br", "Accept": "application/json"})
-
-    def _post(self, metodo, **dados):
-        for tentativa in range(4):
-            try:
-                r = self.s.post(self.BASE + metodo, data=dados, timeout=30)
-            except requests.RequestException:
-                time.sleep(10 * (tentativa + 1))
-                continue
-            if r.status_code in (403, 429) or r.status_code >= 500:
-                time.sleep(20 * (tentativa + 1))
-                continue
-            r.raise_for_status()
-            j = r.json()
-            if isinstance(j, dict) and j.get("erro"):
-                if "nada encontrado" in str(j.get("erro")).lower():
-                    return None
-                raise ValueError(j["erro"])
-            return j
-        raise Limite(f"{metodo}: muitas falhas seguidas")
-
-    def referencia(self):
-        r = self._post("ConsultarTabelaDeReferencia")[0]
-        return {"codigo": int(r["Codigo"]), "mes": r["Mes"].strip()}
-
-    def marcas(self, tipo, ref):
-        cod, _ = TIPOS[tipo]
-        return [(str(m["Value"]), m["Label"].strip()) for m in
-                self._post("ConsultarMarcas", codigoTabelaReferencia=ref, codigoTipoVeiculo=cod)]
-
-    def modelos(self, tipo, ref, marca):
-        cod, _ = TIPOS[tipo]
-        j = self._post("ConsultarModelos", codigoTipoVeiculo=cod, codigoTabelaReferencia=ref, codigoMarca=marca)
-        return [(str(m["Value"]), m["Label"].strip()) for m in (j or {}).get("Modelos", [])]
-
-    def anos(self, tipo, ref, marca, modelo):
-        cod, _ = TIPOS[tipo]
-        j = self._post("ConsultarAnoModelo", codigoTipoVeiculo=cod, codigoTabelaReferencia=ref,
-                       codigoMarca=marca, codigoModelo=modelo) or []
-        return [(a["Value"], a["Label"].strip()) for a in j]
-
-    def preco(self, tipo, ref, marca, modelo, ano):
-        cod, nome_tipo = TIPOS[tipo]
-        ano_m, comb = ano.split("-")
-        j = self._post("ConsultarValorComTodosParametros", codigoTabelaReferencia=ref, codigoTipoVeiculo=cod,
-                       codigoMarca=marca, codigoModelo=modelo, anoModelo=ano_m, codigoTipoCombustivel=comb,
-                       tipoVeiculo=nome_tipo, modeloCodigoExterno="", tipoConsulta="tradicional")
-        if not j:
-            return None
-        return {"valor": numero(j.get("Valor")), "codigo_fipe": j.get("CodigoFipe", ""),
-                "combustivel": j.get("Combustivel", "")}
-
-
-class FipeParallelum:
-    nome = "Parallelum (API FIPE)"
-    BASE = "https://parallelum.com.br/fipe/api/v1/"
-
-    def __init__(self):
-        self.s = requests.Session()
-        self.s.headers.update({"User-Agent": UA})
-        self.mes = None
-
-    def _get(self, caminho):
-        for tentativa in range(3):
-            try:
-                r = self.s.get(self.BASE + caminho, timeout=30)
-            except requests.RequestException:
-                time.sleep(10)
-                continue
-            if r.status_code == 429:
-                raise Limite("limite diário da Parallelum")
-            if r.status_code >= 500:
-                time.sleep(15)
-                continue
-            if r.status_code == 404:
-                return None
-            r.raise_for_status()
-            return r.json()
-        raise Limite(f"{caminho}: muitas falhas")
-
-    def referencia(self):
-        # A v1 não informa a tabela; usa o mês de um preço qualquer como referência.
-        j = self._get("carros/marcas/21/modelos/4828/anos/2015-1") or {}
-        mes = str(j.get("MesReferencia", date.today().strftime("%m/%Y"))).strip()
-        return {"codigo": mes, "mes": mes}
-
-    def marcas(self, tipo, ref):
-        return [(str(m["codigo"]), m["nome"].strip()) for m in self._get(f"{tipo}/marcas")]
-
-    def modelos(self, tipo, ref, marca):
-        j = self._get(f"{tipo}/marcas/{marca}/modelos") or {}
-        return [(str(m["codigo"]), m["nome"].strip()) for m in j.get("modelos", [])]
-
-    def anos(self, tipo, ref, marca, modelo):
-        return [(a["codigo"], a["nome"].strip()) for a in (self._get(f"{tipo}/marcas/{marca}/modelos/{modelo}/anos") or [])]
-
-    def preco(self, tipo, ref, marca, modelo, ano):
-        j = self._get(f"{tipo}/marcas/{marca}/modelos/{modelo}/anos/{ano}")
-        if not j:
-            return None
-        return {"valor": numero(j.get("Valor")), "codigo_fipe": j.get("CodigoFipe", ""),
-                "combustivel": j.get("Combustivel", "")}
-
-
-# ---------------------------------------------------------------- coleta
-def escolher_fonte():
-    for classe in (FipeOficial, FipeParallelum):
-        fonte = classe()
-        try:
-            ref = fonte.referencia()
-            print(f"[FIPE] fonte: {fonte.nome}, tabela de {ref['mes']}")
-            return fonte, ref
-        except Exception as e:
-            print(f"[FIPE] {classe.nome} indisponível: {str(e)[:150]}")
-    return None, None
-
-
-def ano_util(codigo):
+def baixar_meses(destino: Path, quantos=2):
+    """Clona só a estrutura do dataset e baixa (via LFS) os últimos meses."""
+    git("clone", "--depth", "1", "--no-checkout", "--filter=blob:none", REPO, str(destino))
+    arvore = git("ls-tree", "-r", "--name-only", "HEAD", cwd=destino).split()
+    meses = sorted({m.group(1) for f in arvore if (m := re.match(r"^(\d{4}/\d{2})/fipex-prices\.csv$", f))})
+    if not meses:
+        raise RuntimeError("nenhum mês encontrado no dataset")
+    escolhidos = meses[-quantos:]
+    git("sparse-checkout", "set", "--no-cone", *[f"{m}/fipex-prices.csv" for m in escolhidos], cwd=destino)
+    git("checkout", cwd=destino)
     try:
-        a = int(codigo.split("-")[0])
-    except ValueError:
-        return False
-    return a == 32000 or a >= ANO_MINIMO  # 32000 = zero km
+        git("lfs", "pull", "--include", ",".join(f"{m}/fipex-prices.csv" for m in escolhidos), cwd=destino)
+    except RuntimeError as e:
+        print(f"[FIPE] aviso no git lfs: {e}")
+    return [(m, destino / m / "fipex-prices.csv") for m in escolhidos]
 
 
-def ordenar_marcas(tipo, marcas):
-    pri = {n.lower(): i for i, n in enumerate(PRIORIDADE[tipo])}
-    return sorted(marcas.items(), key=lambda kv: (pri.get(kv[1]["nome"].lower(), 999), kv[1]["nome"]))
-
-
-def coletar(tipo, fonte, ref, prazo, contador):
-    caminho = PASTA / f"{tipo}.json"
-    base = ler_json(caminho, {"marcas": {}})
-    rc = ref["codigo"]
-    base["referencia"] = ref
-    base["fonte"] = fonte.nome
-
-    def salvar():
-        salvar_json(caminho, base)
-
-    def tempo():
-        return time.time() < prazo
-
-    def pausa():
-        contador["n"] += 1
-        if contador["n"] % 150 == 0:
-            salvar()
-            print(f"[FIPE] {contador['n']} consultas...")
-        time.sleep(0.35)
-
-    if base.get("marcas_ref") != rc:
-        for cod, nome in fonte.marcas(tipo, rc):
-            base["marcas"].setdefault(cod, {"nome": nome, "modelos": {}})["nome"] = nome
-        base["marcas_ref"] = rc
-        pausa()
-
-    for mcod, marca in ordenar_marcas(tipo, base["marcas"]):
-        if not tempo():
-            break
-        if marca.get("modelos_ref") != rc:
-            for cod, nome in fonte.modelos(tipo, rc, mcod):
-                marca["modelos"].setdefault(cod, {"nome": nome, "anos": {}})["nome"] = nome
-            marca["modelos_ref"] = rc
-            pausa()
-        for ocod, modelo in marca["modelos"].items():
-            if not tempo():
-                break
-            if modelo.get("anos_ref") != rc:
-                for acod, rotulo in fonte.anos(tipo, rc, mcod, ocod):
-                    if ano_util(acod):
-                        modelo["anos"].setdefault(acod, {})["rotulo"] = rotulo
-                modelo["anos_ref"] = rc
-                pausa()
-            for acod, ano in modelo["anos"].items():
-                if not tempo():
-                    break
-                if ano.get("ref") == rc:
-                    continue
-                p = fonte.preco(tipo, rc, mcod, ocod, acod)
-                pausa()
-                if not p or not p["valor"]:
-                    ano["ref"] = rc
-                    continue
-                if ano.get("valor") and ano.get("ref") not in (None, rc):
-                    ano["anterior"] = ano["valor"]
-                ano.update(p)
-                ano["ref"] = rc
-    salvar()
-    total = sum(1 for m in base["marcas"].values() for o in m["modelos"].values()
-                for a in o["anos"].values() if a.get("ref") == rc and a.get("valor"))
-    print(f"[FIPE] {tipo}: {total} preços da tabela de {ref['mes']}")
+def ler_mes(caminho: Path):
+    """{(tipo, marca, modelo, ano, combustível): (valor, codigo_fipe)} de um mês."""
+    texto = caminho.read_text(encoding="utf-8", errors="replace")
+    if texto.startswith("version https://git-lfs"):
+        raise RuntimeError(f"{caminho} veio como ponteiro LFS (arquivo não baixado)")
+    amostra = texto[:2000]
+    sep = "\t" if amostra.count("\t") >= amostra.count(";") and amostra.count("\t") >= amostra.count(",") else (";" if amostra.count(";") > amostra.count(",") else ",")
+    saida, ref = {}, None
+    for r in csv.DictReader(io.StringIO(texto), delimiter=sep):
+        tipo = TIPO.get(str(r.get("tipo_veiculo", "")).strip().lower())
+        if not tipo:
+            continue
+        zero = str(r.get("zero_km", "")).strip().lower() in ("true", "1", "t", "sim", "yes")
+        try:
+            ano = 32000 if zero else int(r["ano_modelo"])
+            valor = int(r["valor_centavos"]) / 100
+        except (KeyError, ValueError):
+            continue
+        if ano != 32000 and (ano < ANO_MINIMO or ano > 2100):
+            continue
+        if ano == 32000 and not zero:
+            pass
+        chave = (tipo, r["nome_marca"].strip(), r["nome_modelo"].strip(), ano, r.get("nome_combustivel", "").strip())
+        saida[chave] = (valor, r.get("codigo_fipe", "").strip())
+        if ref is None:
+            try:
+                ref = (int(r["ano_referencia"]), int(r["mes_referencia"]))
+            except (KeyError, ValueError):
+                pass
+    return saida, ref
 
 
 def main():
-    minutos = float(os.environ.get("FIPE_MINUTOS", "20"))
-    prazo = time.time() + minutos * 60
-    fonte, ref = escolher_fonte()
-    if not fonte:
-        print("[FIPE] nenhuma fonte disponível agora; tento na próxima execução.")
-        return
-    contador = {"n": 0}
-    for tipo in ("carros", "motos"):
-        try:
-            coletar(tipo, fonte, ref, prazo, contador)
-        except Limite as e:
-            print(f"[FIPE] pausa: {e}. O progresso foi salvo.")
-            break
-        if time.time() >= prazo:
-            break
-    salvar_json(PASTA / "estado.json", {"referencia": ref, "fonte": fonte.nome, "ultima_execucao": date.today().isoformat(),
-                                        "consultas": contador["n"]})
-    print(f"[FIPE] fim: {contador['n']} consultas nesta execução.")
+    with tempfile.TemporaryDirectory() as tmp:
+        if len(sys.argv) > 1:
+            base = Path(sys.argv[1])
+            meses = sorted((f"{p.parent.parent.name}/{p.parent.name}", p) for p in base.glob("*/*/fipex-prices.csv"))[-2:]
+        else:
+            meses = baixar_meses(Path(tmp) / "fipex")
+        print(f"[FIPE] meses: {[m for m, _ in meses]}")
+        atual, ref = ler_mes(meses[-1][1])
+        anterior = ler_mes(meses[-2][1])[0] if len(meses) > 1 else {}
+    if not atual:
+        raise SystemExit("[FIPE] arquivo do mês sem dados reconhecíveis")
+    a, m = ref or tuple(int(x) for x in meses[-1][0].split("/"))
+    referencia = {"codigo": f"{a}-{m:02d}", "mes": f"{MESES[m - 1]} de {a}"}
+    anteriores = ler_json(PASTA / "estado.json", {}).get("referencia", {})
+    por_tipo = {}
+    for (tipo, marca, modelo, ano, comb), (valor, cod) in atual.items():
+        ant = anterior.get((tipo, marca, modelo, ano, comb))
+        por_tipo.setdefault(tipo, []).append([marca, modelo, cod, ano, comb, valor, ant[0] if ant else None])
+    for tipo, linhas in por_tipo.items():
+        linhas.sort(key=lambda x: (x[0].lower(), x[1].lower(), -x[3]))
+        salvar_json(PASTA / f"{tipo}.json", {"referencia": referencia, "fonte": "Tabela FIPE (dataset fipex-labs, CC0)",
+                                             "colunas": ["marca", "modelo", "codigo_fipe", "ano", "combustivel", "valor", "anterior"],
+                                             "veiculos": linhas})
+        print(f"[FIPE] {tipo}: {len(linhas)} preços de {referencia['mes']}")
+    salvar_json(PASTA / "estado.json", {"referencia": referencia, "anterior": anteriores, "atualizado": date.today().isoformat()})
 
 
 if __name__ == "__main__":

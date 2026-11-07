@@ -33,7 +33,7 @@
   <div class="topo-in">
     <a class="marca" href="/">{{ cfg.nome_site }}</a>
     <nav class="nav" aria-label="Seções">
-      {% set secoes = [("/combustivel/", "Combustível"), ("/calculadoras/decimo-terceiro/", "13º salário"), ("/combustivel/etanol-ou-gasolina/", "Etanol ou gasolina"), ("/moedas/", "Moedas"), ("/selic-hoje/", "Juros"), ("/ipca-inflacao/", "Inflação")] %}
+      {% set secoes = [("/combustivel/", "Combustível")] + ([("/tabela-fipe/", "Tabela FIPE")] if fipe else []) + [("/calculadoras/decimo-terceiro/", "13º salário"), ("/moedas/", "Moedas"), ("/selic-hoje/", "Juros"), ("/ipca-inflacao/", "Inflação")] %}
       {% if tem_energia %}{% set secoes = secoes + [("/conta-de-luz/", "Conta de luz")] %}{% endif %}
       {% set secoes = secoes + [("/calculadoras/", "Calculadoras")] %}
       {% for href, rotulo in secoes %}
@@ -47,7 +47,7 @@
 </main>
 <footer class="rodape">
   <div class="rodape-in">
-    <p>Dados oficiais da <a href="https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos" rel="nofollow">ANP</a>, do <a href="https://www.bcb.gov.br/estatisticas" rel="nofollow">Banco Central</a>{% if tem_energia %} e da <a href="https://dadosabertos.aneel.gov.br" rel="nofollow">ANEEL</a>{% endif %}, atualizados automaticamente. Os preços são médias de pesquisa e podem variar de posto para posto.</p>
+    <p>Dados oficiais da <a href="https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos" rel="nofollow">ANP</a>, do <a href="https://www.bcb.gov.br/estatisticas" rel="nofollow">Banco Central</a>{% if tem_energia %}, da <a href="https://dadosabertos.aneel.gov.br" rel="nofollow">ANEEL</a>{% endif %}{% if fipe %} e Tabela FIPE{% endif %}, atualizados automaticamente. Os preços são médias de pesquisa e podem variar de posto para posto.</p>
     <div class="rodape-links">
       <a href="/sobre/">Sobre e metodologia</a>
       <a href="/privacidade/">Privacidade</a>

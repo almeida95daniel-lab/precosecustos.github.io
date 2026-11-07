@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% block titulo %}Tabela FIPE {{ marca.nome }} {{ info.ref.mes|replace(" de ", "/") }}: todos os modelos | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Preço FIPE de todos os {{ info.nome|lower }} {{ marca.nome }} em {{ info.ref.mes }}: {{ marca.modelos|length }} modelos, do mais barato ao mais caro, por ano.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), ("/tabela-fipe/", "Tabela FIPE"), (None, marca.nome)]) }}
+<h1>Tabela FIPE {{ marca.nome }}</h1>
+<p class="lead">{{ marca.modelos|length }} {{ "modelo" if marca.modelos|length == 1 else "modelos" }} de {{ info.nome|lower }} {{ marca.nome }} na tabela de {{ info.ref.mes }}. Clique no modelo para ver o preço de cada ano.</p>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Modelo</th><th class="n">Anos</th><th class="n">Preço FIPE</th></tr></thead>
+  <tbody>
+  {% for mod in marca.modelos %}
+  <tr><td><a href="{{ mod.url }}">{{ mod.nome }}</a></td><td class="n">{{ mod.anos[-1].ano }}{% if mod.anos|length > 1 %} a {{ mod.anos[0].ano }}{% endif %}</td><td class="n">{% if mod.min == mod.max %}{{ mod.min|brl(0) }}{% else %}{{ mod.min|brl(0) }} a {{ mod.max|brl(0) }}{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<p><a href="/tabela-fipe/">Ver outras marcas</a></p>
+{% endblock %}
