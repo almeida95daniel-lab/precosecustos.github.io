@@ -28,11 +28,25 @@ PAGINA = ("https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia
           "levantamento-de-precos-de-combustiveis-ultimas-semanas-pesquisadas")
 BASE = "https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/arquivos-lpc"
 PASTA = DADOS / "anp"
-RE_SEMANA = re.compile(r"(\d{4})-(\d{1,2})-(\d{1,2})[_-](\d{4})-(\d{1,2})-(\d{1,2})\.xlsx", re.I)
+# A ANP já usou "2026-10-04_2026-10-10" e "2026_10_11-2026_10_17": aceita qualquer separador.
+RE_SEMANA = re.compile(r"(\d{4})[-_.](\d{1,2})[-_.](\d{1,2})[-_.](\d{4})[-_.](\d{1,2})[-_.](\d{1,2})\.xlsx", re.I)
 CAMPOS_HIST = ["semana_fim", "nivel", "uf", "municipio", "produto", "postos", "medio", "minimo", "maximo"]
 
 
 # ---------------------------------------------------------------- descoberta
+def baixar_um(urls, **kw):
+    """Tenta cada endereço candidato e devolve o primeiro que existir."""
+    if isinstance(urls, str):
+        urls = [urls]
+    ultimo = None
+    for u in urls:
+        try:
+            return baixar(u, **kw)
+        except FileNotFoundError as e:
+            ultimo = e
+    raise ultimo or FileNotFoundError(urls)
+
+
 def semana_do_nome(url):
     m = RE_SEMANA.search(url)
     if not m:
@@ -71,10 +85,10 @@ def descobrir_semanas():
         ini = fim - timedelta(days=6)
         if fim <= mais_nova or (ini, fim) in semanas:
             continue
-        nome = f"{ini:%Y-%m-%d}_{fim:%Y-%m-%d}.xlsx"
+        nomes = [f"{ini:%Y_%m_%d}-{fim:%Y_%m_%d}.xlsx", f"{ini:%Y-%m-%d}_{fim:%Y-%m-%d}.xlsx"]
         semanas[(ini, fim)] = {
-            "resumo": f"{BASE}/{fim.year}/resumo_semanal_lpc_{nome}",
-            "revendas": f"{BASE}/{fim.year}/revendas_lpc_{nome}",
+            "resumo": [f"{BASE}/{fim.year}/resumo_semanal_lpc_{n}" for n in nomes],
+            "revendas": [f"{BASE}/{fim.year}/revendas_lpc_{n}" for n in nomes],
             "adivinhado": True,
         }
     print(f"[ANP] semanas na página: {len(achadas)} (mais recente {mais_nova}); testando também {sum(1 for v in semanas.values() if v.get('adivinhado'))} endereços prováveis")
@@ -274,7 +288,7 @@ def main():
     nova_ultima = None
     for (ini, fim), urls in fila:
         try:
-            conteudo = open(urls["resumo"], "rb").read() if urls.get("local") else baixar(urls["resumo"])
+            conteudo = open(urls["resumo"], "rb").read() if urls.get("local") else baixar_um(urls["resumo"])
         except FileNotFoundError:
             continue  # semana adivinhada que não existe
         except Exception as e:
@@ -302,7 +316,7 @@ def main():
             salvar_json(PASTA / "ultima.json", {"semana_inicio": ini.isoformat(), "semana_fim": fim.isoformat()})
             if urls.get("revendas"):
                 try:
-                    bruto = open(urls["revendas"], "rb").read() if urls.get("local") else baixar(urls["revendas"], timeout=180)
+                    bruto = open(urls["revendas"], "rb").read() if urls.get("local") else baixar_um(urls["revendas"], timeout=180)
                     postos = ler_revendas(bruto)
                     salvar_json(PASTA / "postos.json", {"semana_fim": fim.isoformat(), "cidades": postos})
                     print(f"[ANP] postos: {len(postos)} cidades")
