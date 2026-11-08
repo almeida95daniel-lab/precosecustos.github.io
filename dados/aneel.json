@@ -1,10 +1,6 @@
 {
  "bandeiras": [
   {
-   "mes": "2024-11",
-   "bandeira": "Amarela"
-  },
-  {
    "mes": "2024-12",
    "bandeira": "Verde"
   },
@@ -95,6 +91,11 @@
   {
    "mes": "2026-10",
    "bandeira": "Verde"
+  },
+  {
+   "mes": "2026-11",
+   "bandeira": "Verde",
+   "anunciada": true
   }
  ],
  "adicional_100kwh": {
