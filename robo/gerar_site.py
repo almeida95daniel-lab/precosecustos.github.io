@@ -189,14 +189,16 @@ def montar_combustiveis():
         por_url[url] = posto
         c.setdefault("lista_postos", []).append(posto)
     url_cnpj = {p["cnpj"]: p["url"] for p in por_url.values()}
+    url_nome = {(p["uf"], p["cidade"], p["nome"], p["endereco"]): p["url"] for p in por_url.values()}
     for c in cidades:
         c["lista_postos"] = sorted(c.get("lista_postos", []), key=lambda p: (p["precos"].get("gasolina", 99), p["nome"]))
         if c["lista_postos"]:
             c["url_postos"] = f"/postos/{c['uf'].lower()}/{c['slug']}/"
         for lst in c["postos"].values():
             for p in lst.get("postos", []):
-                if p.get("cnpj") in url_cnpj:
-                    p["url"] = url_cnpj[p["cnpj"]]
+                u = url_cnpj.get(p.get("cnpj")) or url_nome.get((c["uf"], c.get("chave_anp"), p["nome"], p["endereco"]))
+                if u:
+                    p["url"] = u
 
     estados = {}
     for uf in UFS:
