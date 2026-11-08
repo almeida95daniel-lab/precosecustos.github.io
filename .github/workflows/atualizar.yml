@@ -34,7 +34,6 @@ jobs:
       hash_busca: ${{ steps.mudou.outputs.hash_busca }}
     steps:
       - uses: actions/checkout@v4
-        with:
 
       - uses: actions/setup-python@v5
         with:
