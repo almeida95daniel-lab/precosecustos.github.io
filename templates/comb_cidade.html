@@ -9,7 +9,7 @@
 {{ m.trilha([("/", "Início"), ("/combustivel/", "Combustível"), (est.url, est.nome), (None, c.nome)]) }}
 <h1>Preço dos combustíveis em {{ c.nome }} ({{ c.uf }})</h1>
 <p class="lead">Pesquisa da ANP de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}.</p>
-<ul class="chips chips-claros pular" aria-label="Nesta página">{% if c.postos.get("gasolina") %}<li><a href="#postos">Postos mais baratos</a></li>{% endif %}<li><a href="#historico">Histórico</a></li><li><a href="#abastecer">Quanto custa encher o tanque</a></li><li><a href="{{ est.url }}">Outras cidades de {{ est.uf }}</a></li></ul>
+<ul class="chips chips-claros pular" aria-label="Nesta página">{% if c.postos.get("gasolina") %}<li><a href="#postos">Postos mais baratos</a></li>{% endif %}<li><a href="#historico">Histórico</a></li><li><a href="#abastecer">Quanto custa encher o tanque</a></li>{% if c.url_postos %}<li><a href="{{ c.url_postos }}">Todos os {{ c.lista_postos|length }} postos</a></li>{% endif %}<li><a href="{{ est.url }}">Outras cidades de {{ est.uf }}</a></li></ul>
 
 {{ m.placa(c.produtos, rodape="Variação em relação à semana anterior.") }}
 
@@ -33,7 +33,7 @@
   <tbody>
   {% for chave, info in PRODUTOS.items() if chave in c.produtos %}
   {% set d = c.produtos[chave] %}
-  <tr><td>{{ info.nome }}</td><td class="n"><strong>{{ d.medio|brl }}</strong></td><td class="n some-celular">{{ d.minimo|brl }}</td><td class="n some-celular">{{ d.maximo|brl }}</td><td class="n some-celular">{{ d.postos or "–" }}</td><td>{{ d.var|seta }}</td></tr>
+  <tr><td>{% if chave != "gasolina" %}<a href="{{ c.url }}{{ PROD_SLUG[chave] }}/">{{ info.nome }}</a>{% else %}{{ info.nome }}{% endif %}</td><td class="n"><strong>{{ d.medio|brl }}</strong></td><td class="n some-celular">{{ d.minimo|brl }}</td><td class="n some-celular">{{ d.maximo|brl }}</td><td class="n some-celular">{{ d.postos or "–" }}</td><td>{{ d.var|seta }}</td></tr>
   {% endfor %}
   </tbody>
 </table>
@@ -48,7 +48,7 @@
   <thead><tr><th>Posto</th><th class="n">Gasolina</th><th class="n some-celular">Coleta</th></tr></thead>
   <tbody>
   {% for p in lista.postos %}
-  <tr><td><strong>{{ p.nome }}</strong>{% if p.bandeira and p.bandeira|lower not in ("branca", "bandeira branca") %} <span class="meta">· {{ p.bandeira }}</span>{% endif %}<br><span class="meta">{{ p.endereco }}{% if p.bairro %}, {{ p.bairro }}{% endif %}</span></td><td class="n"><strong>{{ p.preco|brl(2 if ((p.preco*1000)|round|int) % 10 == 0 else 3) }}</strong></td><td class="n some-celular">{{ p.coleta }}</td></tr>
+  <tr><td>{% if p.url %}<a href="{{ p.url }}"><strong>{{ p.nome }}</strong></a>{% else %}<strong>{{ p.nome }}</strong>{% endif %}{% if p.bandeira and p.bandeira|lower not in ("branca", "bandeira branca") %} <span class="meta">· {{ p.bandeira }}</span>{% endif %}<br><span class="meta">{{ p.endereco }}{% if p.bairro %}, {{ p.bairro }}{% endif %}</span></td><td class="n"><strong>{{ p.preco|brl(2 if ((p.preco*1000)|round|int) % 10 == 0 else 3) }}</strong></td><td class="n some-celular">{{ p.coleta }}</td></tr>
   {% endfor %}
   </tbody>
 </table>

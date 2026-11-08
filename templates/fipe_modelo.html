@@ -34,7 +34,7 @@
 
 <h2>Custos de ter um {{ mod.nome }}</h2>
 <ul>
-  <li><strong>IPVA:</strong> com alíquota de 4% (como em São Paulo), seria cerca de {{ (topo.valor * 0.04)|brl(0) }} por ano; com 2% (como em Santa Catarina), cerca de {{ (topo.valor * 0.02)|brl(0) }}. A alíquota e a base de cálculo variam por estado; confira na Secretaria da Fazenda do seu estado.</li>
+  <li><strong>IPVA:</strong> com alíquota de 4% (como em São Paulo), seria cerca de {{ (topo.valor * 0.04)|brl(0) }} por ano; com 2% (como em Santa Catarina), cerca de {{ (topo.valor * 0.02)|brl(0) }}. A alíquota e a base de cálculo variam por estado; <a href="/ipva/">calcule o IPVA do seu estado</a>.</li>
   {% if info.singular == "carro" %}<li><strong>Combustível:</strong> veja o preço da gasolina e do etanol na sua cidade na <a href="/combustivel/">página de combustíveis</a>.</li>{% endif %}
   <li><strong>Financiamento:</strong> compare com quanto o mesmo dinheiro <a href="/quanto-rende/">renderia aplicado</a>.</li>
 </ul>

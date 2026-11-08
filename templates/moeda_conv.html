@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% set pl = cv.nome %}
+{% if cv.sentido == "ext" %}
+  {% set titulo_txt = cv.nome ~ " em reais" %}
+  {% set res = cv.reais %}{% set res_txt = res|brl(2) %}
+  {% set cartao = res * (1 + 0.04) * (1 + iof / 100) %}
+{% else %}
+  {% set titulo_txt = cv.nome ~ " em " ~ cv.sg %}
+  {% set res = cv.ext %}{% set res_txt = m.simbolo ~ " " ~ res|num(2) %}
+  {% set cartao = res / ((1 + 0.04) * (1 + iof / 100)) %}
+{% endif %}
+{% block titulo %}{{ titulo_txt|capitalize }} hoje: {{ res_txt }} ({{ m.data|data_br }}) | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Quanto dá {{ titulo_txt }} hoje: {{ res_txt }} pela cotação oficial de {{ m.data|data_br }}. Veja também o valor com IOF e taxa do cartão.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), ("/moedas/", "Moedas"), (m.url, m.nome), (None, titulo_txt|capitalize)]) }}
+<h1>Quanto é {{ titulo_txt }} hoje?</h1>
+<p class="lead">Cotação oficial (PTAX de venda) de {{ m.data|data_br("longa") }}.</p>
+<div class="placa">
+  <div class="placa-linha">
+    <span class="placa-nome">{{ cv.nome }}</span>
+    <span class="placa-preco">{% if cv.sentido == "ext" %}<small>R$</small>{{ res|num(2) }}{% else %}<small>{{ m.simbolo }}</small>{{ res|num(2) }}{% endif %}</span>
+    <span class="placa-sub">{{ m.var|seta }} no dia</span>
+  </div>
+</div>
+<div class="veredito">
+  <strong>{% if cv.sentido == "ext" %}No cartão, pagando em {{ m.nome|lower }}: cerca de {{ cartao|brl(2) }}{% else %}Comprando no cartão ou em casa de câmbio: cerca de {{ m.simbolo }} {{ cartao|num(2) }}{% endif %}</strong>
+  <p>Estimativa com IOF de {{ iof|num(1) }}% e margem de 4% do banco sobre a cotação oficial. Cada banco e casa de câmbio cobra uma margem diferente.</p>
+</div>
+
+<h2>Outros valores</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Valor</th><th class="n">Cotação oficial</th><th class="n some-celular">Com IOF e margem</th></tr></thead>
+  <tbody>
+  {% for x in convs if x.sentido == cv.sentido %}
+  <tr><td>{% if x.url == cv.url %}<strong>{{ x.nome }}</strong>{% else %}<a href="{{ x.url }}">{{ x.nome }}</a>{% endif %}</td>
+    {% if x.sentido == "ext" %}<td class="n">{{ x.reais|brl(2) }}</td><td class="n some-celular">{{ (x.reais * 1.04 * (1 + iof / 100))|brl(2) }}</td>
+    {% else %}<td class="n">{{ m.simbolo }} {{ x.ext|num(2) }}</td><td class="n some-celular">{{ m.simbolo }} {{ (x.ext / (1.04 * (1 + iof / 100)))|num(2) }}</td>{% endif %}</tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% set inversas = convs|rejectattr("sentido", "equalto", cv.sentido)|list %}
+{% if inversas %}<p>{% if cv.sentido == "ext" %}No sentido contrário:{% else %}Também:{% endif %} {% for x in inversas[:4] %}<a href="{{ x.url }}">{{ x.nome }}{% if x.sentido == "brl" %} em {{ x.sg }}{% else %} em reais{% endif %}</a>{{ ", " if not loop.last }}{% endfor %}.</p>{% endif %}
+<p><a href="{{ m.url }}">Conversor de {{ m.nome|lower }} com qualquer valor e gráfico de 12 meses</a></p>
+
+{{ mc.faq([
+  ("Quanto é " ~ titulo_txt ~ "?", "Pela cotação oficial de " ~ m.data|data_br ~ ", " ~ cv.nome ~ " equivalem a " ~ res_txt ~ "."),
+  ("Por que o valor no cartão é maior?", "Na compra internacional com cartão, o banco usa a própria cotação (em geral acima da oficial) e cobra IOF de " ~ iof|num(1) ~ "%. Em casas de câmbio também há margem e IOF."),
+  ("A cotação muda todo dia?", "Sim. O Banco Central divulga a PTAX em todo dia útil, e esta página é atualizada automaticamente.")
+]) }}
+{% endblock %}

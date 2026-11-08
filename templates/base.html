@@ -44,7 +44,7 @@
   </div>
   <div class="nav-faixa">
     <nav class="nav" id="menu-principal" aria-label="Seções">
-      {% set secoes = [("/combustivel/", "Combustível")] + ([("/tabela-fipe/", "Tabela FIPE")] if fipe else []) + [("/moedas/", "Dólar e moedas"), ("/calculadoras/decimo-terceiro/", "13º salário"), ("/quanto-rende/", "Quanto rende"), ("/selic-hoje/", "Selic"), ("/ipca-inflacao/", "Inflação")] %}
+      {% set secoes = [("/combustivel/", "Combustível")] + ([("/tabela-fipe/", "Tabela FIPE")] if fipe else []) + [("/ipva/", "IPVA"), ("/moedas/", "Dólar e moedas"), ("/calculadoras/decimo-terceiro/", "13º salário"), ("/quanto-rende/", "Quanto rende"), ("/selic-hoje/", "Selic"), ("/ipca-inflacao/", "Inflação")] %}
       {% if tem_energia %}{% set secoes = secoes + [("/conta-de-luz/", "Conta de luz")] %}{% endif %}
       {% set secoes = secoes + [("/calculadoras/", "Calculadoras")] %}
       {% for href, rotulo in secoes %}<a href="{{ href }}"{% if url == href or (href != "/" and url.startswith(href) and href|length > 9) %} aria-current="page"{% endif %}>{{ rotulo }}</a>{% endfor %}

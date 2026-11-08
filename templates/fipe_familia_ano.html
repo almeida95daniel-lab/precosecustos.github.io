@@ -16,7 +16,7 @@
 {% set barato = fa.itens[0] %}
 <h2>Custo para manter</h2>
 <ul>
-  <li><strong>IPVA:</strong> sobre {{ barato.a.valor|brl(0) }}, seria cerca de {{ (barato.a.valor * 0.04)|brl(0) }} por ano com alíquota de 4% (SP) ou {{ (barato.a.valor * 0.02)|brl(0) }} com 2% (SC). Cada estado tem sua regra.</li>
+  <li><strong>IPVA:</strong> sobre {{ barato.a.valor|brl(0) }}, seria cerca de {{ (barato.a.valor * 0.04)|brl(0) }} por ano com alíquota de 4% (SP) ou {{ (barato.a.valor * 0.02)|brl(0) }} com 2% (SC). Cada estado tem sua regra: <a href="/ipva/">calcule o IPVA do seu estado</a>.</li>
   {% if info.singular == "carro" %}<li><strong>Combustível:</strong> veja <a href="/combustivel/">o preço da gasolina na sua cidade</a> e <a href="/calculadoras/custo-da-viagem/">quanto custa uma viagem</a>.</li>{% endif %}
 </ul>
 {{ mc.faq([

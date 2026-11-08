@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% set info = PRODUTOS[prod] %}
+{% set d = c.produtos[prod] %}
+{% set ep = est.produtos.get(prod) %}
+{% set bp = comb.brasil.produtos.get(prod) %}
+{% set casas = 2 if prod == "glp" else 2 %}
+{% set nome_curto = "gás de cozinha" if prod == "glp" else info.nome|lower %}
+{% block titulo %}Preço {{ "do" if prod in ("diesel", "diesel_s10", "gnv", "glp", "etanol") else "da" }} {{ nome_curto }} em {{ c.nome }} ({{ c.uf }}) hoje: {{ d.medio|brl }} | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}{{ info.nome }} em {{ c.nome }}: média de {{ d.medio|brl }} por {{ info.unidade }}, de {{ d.minimo|brl }} a {{ d.maximo|brl }}{% if d.postos %} em {{ d.postos }} postos{% endif %}. Postos mais baratos e histórico. Pesquisa ANP de {{ comb.fim|data_br }}.{% endblock %}
+{% block conteudo %}
+{{ m.trilha([("/", "Início"), ("/combustivel/", "Combustível"), (est.url, est.nome), (c.url, c.nome), (None, info.nome)]) }}
+<h1>Preço {{ "do" if prod in ("diesel", "diesel_s10", "gnv", "glp", "etanol") else "da" }} {{ nome_curto }} em {{ c.nome }} ({{ c.uf }})</h1>
+<p class="lead">Pesquisa da ANP de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}.</p>
+<ul class="chips chips-claros pular" aria-label="Outros combustíveis">{% for chave, i2 in PRODUTOS.items() if chave in c.produtos and chave != prod %}<li><a href="{{ c.url }}{{ PROD_SLUG[chave] ~ '/' if chave != 'gasolina' else '' }}">{{ i2.nome }}</a></li>{% endfor %}</ul>
+
+<div class="placa">
+  <div class="placa-linha">
+    <span class="placa-nome">{{ info.nome }}</span>
+    <span class="placa-preco"><small>R$</small>{{ d.medio|num(2) }}</span>
+    <span class="placa-sub">média por {{ info.unidade }} · {{ d.var|seta }}</span>
+  </div>
+  {% if d.minimo and d.maximo and d.maximo > d.minimo %}
+  <div class="placa-linha">
+    <span class="placa-nome">Mais barato</span>
+    <span class="placa-preco" style="font-size:2.1rem"><small>R$</small>{{ d.minimo|num(2) }}</span>
+    <span class="placa-sub">mais caro: {{ d.maximo|brl }}</span>
+  </div>
+  {% endif %}
+  <p class="placa-rodape">Variação em relação à semana anterior{% if d.postos %}. {{ d.postos }} postos pesquisados{% endif %}.</p>
+</div>
+
+{% if prod == "etanol" %}{{ m.veredito_etanol(c.razao, "em " ~ c.nome) }}{% endif %}
+
+<h2>Resumo</h2>
+<p>{{ info.nome }} em {{ c.nome }} sai em média por <strong>{{ d.medio|brl }}</strong> por {{ info.unidade }}.
+{% if d.var4 is not none %}Em quatro semanas, o preço {% if d.var4|abs < 0.3 %}ficou estável{% elif d.var4 > 0 %}subiu {{ d.var4|num(1) }}%{% else %}caiu {{ (-d.var4)|num(1) }}%{% endif %}.{% endif %}
+{% if ep %}{% set dif = (d.medio / ep.medio - 1) * 100 %}{% if dif|abs < 0.5 %} O valor está na média de {{ est.nome }} ({{ ep.medio|brl }}).{% elif dif < 0 %} Está {{ (-dif)|num(1) }}% abaixo da média de {{ est.nome }} ({{ ep.medio|brl }}).{% else %} Está {{ dif|num(1) }}% acima da média de {{ est.nome }} ({{ ep.medio|brl }}).{% endif %}{% endif %}
+{% if bp %} A média do Brasil é {{ bp.medio|brl }}.{% endif %}
+{% if prod in ("gasolina_aditivada", "etanol", "diesel", "diesel_s10") and d.minimo and d.maximo > d.minimo %} Quem abastece 40 litros no posto mais barato economiza até {{ ((d.maximo - d.minimo) * 40)|brl }} em relação ao mais caro.{% endif %}</p>
+
+{% set lista = c.postos.get(prod) %}
+{% if lista and lista.postos %}
+<h2 id="postos">Onde está mais barato</h2>
+<p class="nota">{{ lista.total }} postos pesquisados pela ANP. Confirme na bomba: o preço pode ter mudado desde a coleta.</p>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Posto</th><th class="n">Preço</th><th class="n some-celular">Coleta</th></tr></thead>
+  <tbody>{% for p in lista.postos %}<tr><td>{% if p.url %}<a href="{{ p.url }}"><strong>{{ p.nome }}</strong></a>{% else %}<strong>{{ p.nome }}</strong>{% endif %}{% if p.bandeira and p.bandeira|lower not in ("branca", "bandeira branca") %} <span class="meta">· {{ p.bandeira }}</span>{% endif %}<br><span class="meta">{{ p.endereco }}{% if p.bairro %}, {{ p.bairro }}{% endif %}</span></td><td class="n"><strong>{{ p.preco|brl(2 if ((p.preco*1000)|round|int) % 10 == 0 else 3) }}</strong></td><td class="n some-celular">{{ p.coleta }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+
+{% set hist = serie_semanal(c.serie, prod) %}
+{% if hist|length > 1 %}
+<h2 id="historico">Histórico</h2>
+{{ grafico(hist, titulo=info.nome ~ ", preço médio por " ~ info.unidade ~ ", semana a semana") }}
+{% endif %}
+
+{% if vizinhas %}
+<h2>{{ info.nome }} em outras cidades de {{ est.uf }}</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Cidade</th><th class="n">Média</th></tr></thead>
+  <tbody>{% for o in vizinhas %}<tr><td><a href="{{ o.url }}{{ PROD_SLUG[prod] }}/">{{ o.nome }}</a></td><td class="n">{{ o.produtos[prod].medio|brl }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+<p><a href="{{ c.url }}">Todos os combustíveis em {{ c.nome }}</a></p>
+
+{{ m.faq([
+  ("Quanto está " ~ ("o " if prod in ("diesel", "diesel_s10", "gnv", "glp", "etanol") else "a ") ~ nome_curto ~ " em " ~ c.nome ~ "?", "A média da última pesquisa da ANP é " ~ d.medio|brl ~ " por " ~ info.unidade ~ ", com preços de " ~ d.minimo|brl ~ " a " ~ d.maximo|brl ~ "."),
+  ("De quando são os preços?", "Da pesquisa semanal da ANP de " ~ comb.inicio|data_br ~ " a " ~ comb.fim|data_br ~ ". O site atualiza sozinho quando sai a pesquisa nova.")
+]) }}
+{% endblock %}

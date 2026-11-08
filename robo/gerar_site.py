@@ -163,11 +163,40 @@ def montar_combustiveis():
             continue
         c = {"uf": uf, "nome": nome_oficial(uf, mun), "slug": slug(mun), "estado": UFS[uf],
              "url": f"/combustivel/{uf.lower()}/{slug(mun)}/", "produtos": prods,
-             "serie": series[(nivel, uf, mun)], "postos": postos.get(f"{uf}|{mun}", {})}
+             "serie": series[(nivel, uf, mun)], "postos": postos.get(f"{uf}|{mun}", {}), "chave_anp": mun}
         g, e = prods.get("gasolina"), prods.get("etanol")
         c["razao"] = round(e["medio"] / g["medio"], 3) if g and e else None
         cidades.append(c)
     cidades.sort(key=lambda c: (c["uf"], c["slug"]))
+
+    # todos os postos da semana, com histórico de preço de cada um
+    rev = ler_json(DADOS / "anp" / "revendas.json") or {}
+    rev = rev.get("postos", {}) if rev.get("semana_fim") == fim else {}
+    hist_p = ler_json(DADOS / "anp" / "revendas_hist.json") or {} if rev else {}
+    por_cidade = {f"{c['uf']}|{k}": c for c in cidades for k in [c.get("chave_anp")] if k}
+    por_url = {}
+    for cnpj, t in rev.items():
+        c = por_cidade.get(f"{t['uf']}|{t['cidade']}")
+        if not c:
+            continue
+        base = f"{slug(t['nome'])[:60].strip('-') or 'posto'}-{cnpj[-6:]}"
+        url = f"/postos/{c['uf'].lower()}/{c['slug']}/{base}/"
+        n = 2
+        while url in por_url:
+            url = f"/postos/{c['uf'].lower()}/{c['slug']}/{base}-{n}/"
+            n += 1
+        posto = dict(t, cnpj=cnpj, url=url, cidade_obj=c, hist=hist_p.get(cnpj, {}))
+        por_url[url] = posto
+        c.setdefault("lista_postos", []).append(posto)
+    url_cnpj = {p["cnpj"]: p["url"] for p in por_url.values()}
+    for c in cidades:
+        c["lista_postos"] = sorted(c.get("lista_postos", []), key=lambda p: (p["precos"].get("gasolina", 99), p["nome"]))
+        if c["lista_postos"]:
+            c["url_postos"] = f"/postos/{c['uf'].lower()}/{c['slug']}/"
+        for lst in c["postos"].values():
+            for p in lst.get("postos", []):
+                if p.get("cnpj") in url_cnpj:
+                    p["url"] = url_cnpj[p["cnpj"]]
 
     estados = {}
     for uf in UFS:
@@ -188,7 +217,11 @@ def montar_combustiveis():
     from datetime import timedelta
     proxima = (date.fromisoformat(fim) + timedelta(days=9)).isoformat()
     return {"inicio": ultima["semana_inicio"], "fim": fim, "anterior": anterior, "semanas": semanas, "proxima": proxima,
-            "cidades": cidades, "estados": estados, "brasil": brasil}
+            "cidades": cidades, "estados": estados, "brasil": brasil, "total_postos": len(por_url)}
+
+
+def serie_posto(hist, produto):
+    return [(date.fromisoformat(s).strftime("%d/%m/%y"), v) for s, v in hist.get(produto, [])]
 
 
 def serie_semanal(serie, produto, ultimas=52):
@@ -330,6 +363,8 @@ def nome_valor(v):
 NOME_TIPO = {"carros": ("Carros", "carro"), "motos": ("Motos", "moto")}
 
 
+PROD_SLUG = {"gasolina": "gasolina", "gasolina_aditivada": "gasolina-aditivada", "etanol": "etanol", "diesel_s10": "diesel-s10",
+             "diesel": "diesel-s500", "gnv": "gnv", "glp": "gas-de-cozinha"}
 ANO_MIN_FAMILIA = 2008
 
 
@@ -404,6 +439,33 @@ def montar_fipe():
 
 
 # ================================================================ moedas
+PLURAL_MOEDA = {"USD": ("dólares", "dólar"), "EUR": ("euros", "euro"), "GBP": ("libras", "libra"),
+                "CHF": ("francos suíços", "franco suíço"), "JPY": ("ienes", "iene"), "CNY": ("yuans", "yuan"),
+                "CAD": ("dólares canadenses", "dólar canadense"), "AUD": ("dólares australianos", "dólar australiano"),
+                "ARS": ("pesos argentinos", "peso argentino")}
+VALORES_CONV = {"JPY": [1000, 5000, 10000, 50000, 100000], "ARS": [1000, 10000, 50000, 100000, 1000000]}
+VALORES_PADRAO = [1, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
+VALORES_REAIS = [100, 500, 1000, 2000, 5000, 10000]
+IOF_CAMBIO = 3.5  # % sobre cartão internacional e compra de moeda em espécie (Decreto 12.466/2025)
+
+
+def conversoes(m):
+    """Páginas prontas: '100 dólares em reais' e, para dólar e euro, '1000 reais em dólar'."""
+    if m["codigo"] not in PLURAL_MOEDA:
+        return []
+    pl, sg = PLURAL_MOEDA[m["codigo"]]
+    saida = []
+    for v in VALORES_CONV.get(m["codigo"], VALORES_PADRAO):
+        nome = f"{v:,}".replace(",", ".") + " " + (sg if v == 1 else pl)
+        saida.append({"de": m["codigo"], "valor": v, "nome": nome, "reais": v * m["taxa"], "sentido": "ext",
+                      "url": f"/converter/{v}-{slug(sg if v == 1 else pl)}-em-reais/"})
+    if m["codigo"] in ("USD", "EUR"):
+        for v in VALORES_REAIS:
+            saida.append({"de": "BRL", "valor": v, "nome": f"{v:,}".replace(",", ".") + " reais", "ext": v / m["taxa"],
+                          "sentido": "brl", "sg": sg, "url": f"/converter/{v}-reais-em-{slug(sg)}/"})
+    return saida
+
+
 def montar_moedas(bcb):
     dados = (ler_json(DADOS / "moedas.json") or {}).get("moedas", {})
     # reserva: dólar e euro da série do Banco Central já coletada
@@ -521,12 +583,12 @@ def main():
     env = Environment(loader=FileSystemLoader(RAIZ / "templates"), autoescape=select_autoescape(["html"]),
                       trim_blocks=True, lstrip_blocks=True)
     env.filters.update(brl=brl, num=num, data_br=data_br, seta=seta, json=lambda o: Markup(json.dumps(o, ensure_ascii=False)))
-    env.globals.update(cfg=CONFIG, PRODUTOS=PRODUTOS, UFS=UFS, grafico=grafico, serie_semanal=serie_semanal,
+    env.globals.update(cfg=CONFIG, PRODUTOS=PRODUTOS, UFS=UFS, grafico=grafico, serie_semanal=serie_semanal, serie_posto=serie_posto,
                        comb=comb, bcb=bcb, aneel=aneel, ano=date.today().year, regra=CONFIG["regra_etanol"],
                        tem_energia=bool(energia and (energia["atual"] or energia["principais"])), energia=energia, moedas=moedas, regras=regras, fipe=fipe,
                        exemplos_trabalho=exemplos_trabalho(regras) if regras else [],
                        calc_inss_teto=calc_inss(regras["inss"]["faixas"][-1][0], regras) if regras else 0,
-                       versao=hashlib.md5(((RAIZ / "static" / "estilo.css").read_bytes() + (RAIZ / "static" / "app.js").read_bytes())).hexdigest()[:8])
+                       iof=IOF_CAMBIO, PROD_SLUG=PROD_SLUG, versao=hashlib.md5(((RAIZ / "static" / "estilo.css").read_bytes() + (RAIZ / "static" / "app.js").read_bytes())).hexdigest()[:8])
     mapa = []
     prefixo = CONFIG.get("caminho_base", "").rstrip("/")
 
@@ -554,6 +616,10 @@ def main():
     env.globals["rendes"] = []
 
     pagina("/", "inicio.html", 1.0)
+    if regras and regras.get("ipva"):
+        pagina("/ipva/", "ipva.html", 0.9, uf=None)
+        for uf in regras["ipva"]["aliquotas"]:
+            pagina(f"/ipva/{uf.lower()}/", "ipva.html", 0.8, uf=uf)
     if comb:
         pagina("/combustivel/", "comb_brasil.html", 0.9)
         pagina("/combustivel/etanol-ou-gasolina/", "etanol.html", 0.9)
@@ -563,6 +629,17 @@ def main():
                 vizinhas = sorted([o for o in est["cidades"] if o is not c and "gasolina" in o["produtos"]],
                                   key=lambda o: o["produtos"]["gasolina"]["medio"])[:6]
                 pagina(c["url"], "comb_cidade.html", 0.8, c=c, est=est, vizinhas=vizinhas)
+                if c.get("lista_postos"):
+                    pagina(c["url_postos"], "postos_cidade.html", 0.6, c=c, est=est)
+                    for p in c["lista_postos"]:
+                        outros = [o for o in c["lista_postos"] if o is not p and "gasolina" in o["precos"]][:8]
+                        pagina(p["url"], "posto.html", 0.5, c=c, est=est, p=p, outros=outros)
+                for prod in c["produtos"]:
+                    if prod == "gasolina" or prod not in PROD_SLUG:
+                        continue
+                    viz = sorted([o for o in est["cidades"] if o is not c and prod in o["produtos"]],
+                                 key=lambda o: o["produtos"][prod]["medio"])[:8]
+                    pagina(c["url"] + PROD_SLUG[prod] + "/", "comb_produto.html", 0.7, c=c, est=est, prod=prod, vizinhas=viz)
     if bcb:
         tem = lambda k: bcb.get(k, {}).get("valor") is not None
         if tem("selic"):
@@ -607,7 +684,9 @@ def main():
     if moedas:
         pagina("/moedas/", "moedas.html", 0.9)
         for m in moedas:
-            pagina(m["url"], "moeda.html", 0.8, m=m)
+            pagina(m["url"], "moeda.html", 0.8, m=m, convs=conversoes(m))
+            for cv in conversoes(m):
+                pagina(cv["url"], "moeda_conv.html", 0.7, m=m, cv=cv, convs=conversoes(m))
     if comb:
         pagina("/calculadoras/custo-da-viagem/", "calc_viagem.html", 0.7)
     if env.globals["tem_energia"]:

@@ -34,6 +34,9 @@
   <p class="nota" id="conv-nota" aria-live="polite"></p>
 </section>
 
+{% if convs %}<p class="nota" style="margin-bottom:4px">Valores prontos:</p>
+<ul class="chips chips-claros">{% for x in convs %}<li><a href="{{ x.url }}">{{ x.nome }}{% if x.sentido == "brl" %} em {{ x.sg }}{% endif %}</a></li>{% endfor %}</ul>{% endif %}
+
 <h2>{{ m.nome }} no último ano</h2>
 {{ grafico(m.grafico, casas=4, titulo=m.nome ~ ", " ~ rot ~ " em reais, por dia útil") }}
 

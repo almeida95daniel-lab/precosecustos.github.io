@@ -164,7 +164,7 @@ def ler_revendas(conteudo: bytes, por_cidade=8):
     """Postos mais baratos por (UF, cidade, produto)."""
     wb = openpyxl.load_workbook(io.BytesIO(conteudo), read_only=True, data_only=True)
     ws = _aba(wb, "POSTOS REVENDEDORES") or wb.worksheets[0]
-    grupos = {}
+    grupos, todos = {}, {}
     for reg in _linhas_com_cabecalho(ws, ["CNPJ", "PRODUTO"]):
         prod = produto_de(_col(reg, "PRODUTO"))
         preco = numero(_col(reg, "PRECO DE REVENDA") or _col(reg, "PRECO"))
@@ -175,7 +175,16 @@ def ler_revendas(conteudo: bytes, por_cidade=8):
         nome = str(_col(reg, "FANTASIA") or "").strip() or str(_col(reg, "RAZAO") or "").strip()
         end = " ".join(str(x).strip() for x in (_col(reg, "ENDERECO"), _col(reg, "NUMERO", evitar=("POSTOS",))) if x not in (None, ""))
         coleta = _col(reg, "DATA DA COLETA")
+        cnpj = re.sub(r"\D", "", str(_col(reg, "CNPJ") or ""))
+        if cnpj:
+            t = todos.setdefault(cnpj, {"nome": titulo(nome) or "Posto sem nome fantasia", "razao": titulo(str(_col(reg, "RAZAO") or "")),
+                                        "bandeira": titulo(_col(reg, "BANDEIRA") or ""), "endereco": titulo(end),
+                                        "bairro": titulo(_col(reg, "BAIRRO") or ""), "cep": str(_col(reg, "CEP") or "").strip(),
+                                        "uf": uf, "cidade": cidade, "precos": {}})
+            t["precos"][prod] = round(preco, 3)
+            t["coleta"] = coleta.strftime("%d/%m") if hasattr(coleta, "strftime") else str(coleta or "")[:10]
         grupos.setdefault((uf, cidade, prod), []).append({
+            "cnpj": cnpj,
             "nome": titulo(nome) or "Posto sem nome fantasia",
             "bandeira": titulo(_col(reg, "BANDEIRA") or ""),
             "endereco": titulo(end),
@@ -188,7 +197,25 @@ def ler_revendas(conteudo: bytes, por_cidade=8):
     for (uf, cidade, prod), lista in grupos.items():
         lista.sort(key=lambda p: p["preco"])
         saida.setdefault(f"{uf}|{cidade}", {})[prod] = {"total": len(lista), "postos": lista[:por_cidade]}
-    return saida
+    return saida, todos
+
+
+SEMANAS_HIST_POSTO = 26
+
+
+def registrar_postos(todos, fim):
+    """Guarda todos os postos da semana e o histórico de preço de cada um (por CNPJ)."""
+    atual = ler_json(PASTA / "revendas.json", {})
+    if atual.get("semana_fim", "") <= fim.isoformat():
+        salvar_json(PASTA / "revendas.json", {"semana_fim": fim.isoformat(), "postos": todos})
+    hist = ler_json(PASTA / "revendas_hist.json", {})
+    chave = fim.isoformat()
+    for cnpj, t in todos.items():
+        h = hist.setdefault(cnpj, {})
+        for prod, preco in t["precos"].items():
+            serie = [x for x in h.get(prod, []) if x[0] != chave] + [[chave, preco]]
+            h[prod] = sorted(serie)[-SEMANAS_HIST_POSTO:]
+    salvar_json(PASTA / "revendas_hist.json", hist)
 
 
 # ---------------------------------------------------------------- histórico
@@ -260,6 +287,30 @@ def garantir_nomes_ibge():
             print(f"[IBGE] nomes indisponíveis ({e2}); as cidades aparecerão como a ANP escreve")
 
 
+def preencher_postos(semanas, quantas=6):
+    """Primeira vez: baixa as planilhas de postos das últimas semanas para montar o histórico de cada posto."""
+    reais = sorted([(k, v) for k, v in semanas.items() if v.get("revendas") and not v.get("adivinhado")], key=lambda kv: kv[0][1])
+    if not reais:
+        reais = sorted([(k, v) for k, v in semanas.items() if v.get("revendas")], key=lambda kv: kv[0][1])
+    feitas = 0
+    for (ini, fim), urls in reais[-(quantas + 2):]:
+        try:
+            bruto = baixar_um(urls["revendas"], timeout=180)
+        except Exception:
+            continue
+        if not bruto.startswith(b"PK"):
+            continue
+        postos, todos = ler_revendas(bruto)
+        if not todos:
+            continue
+        registrar_postos(todos, fim)
+        feitas += 1
+        print(f"[ANP] histórico de postos: semana {fim} ({len(todos)} postos)")
+    if feitas:
+        ultima = ler_json(PASTA / "ultima.json", {})
+        print(f"[ANP] histórico de postos montado com {feitas} semanas (última: {ultima.get('semana_fim')})")
+
+
 # ---------------------------------------------------------------- principal
 def main():
     ap = argparse.ArgumentParser()
@@ -317,11 +368,15 @@ def main():
             if urls.get("revendas"):
                 try:
                     bruto = open(urls["revendas"], "rb").read() if urls.get("local") else baixar_um(urls["revendas"], timeout=180)
-                    postos = ler_revendas(bruto)
+                    postos, todos = ler_revendas(bruto)
                     salvar_json(PASTA / "postos.json", {"semana_fim": fim.isoformat(), "cidades": postos})
+                    registrar_postos(todos, fim)
                     print(f"[ANP] postos: {len(postos)} cidades")
                 except Exception as e:
                     print(f"[ANP] planilha de postos indisponível ({e}); páginas sairão sem a lista de postos.")
+
+    if not args.resumo and not (PASTA / "revendas_hist.json").exists():
+        preencher_postos(semanas)
 
     gravar_historico(historico)
     estado["semanas"] = sorted(vistas)

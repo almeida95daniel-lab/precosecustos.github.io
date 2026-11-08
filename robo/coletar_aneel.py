@@ -106,6 +106,13 @@ def coletar_bandeiras():
                 b = bandeira_canonica(r.get(kb)) if kb else None
                 if kc and b:
                     meses.append({"mes": data_iso(r[kc])[:7], "bandeira": b})
+    # Os dados abertos da ANEEL às vezes levam semanas para incluir o mês novo. A bandeira é anunciada
+    # na última sexta do mês anterior; quando o dado oficial atrasa, vale o registro manual conferido
+    # no anúncio da ANEEL (dados/bandeiras_anunciadas.json), até o dado aberto chegar.
+    oficiais = {m["mes"] for m in meses}
+    for mes, b in (ler_json(DADOS / "bandeiras_anunciadas.json") or {}).get("meses", {}).items():
+        if mes not in oficiais and bandeira_canonica(b):
+            meses.append({"mes": mes, "bandeira": bandeira_canonica(b), "anunciada": True})
     meses = sorted({m["mes"]: m for m in meses}.values(), key=lambda m: m["mes"])
     valores = {}
     if adic:

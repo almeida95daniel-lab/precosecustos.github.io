@@ -39,6 +39,7 @@
   {% if moedas %}<li><a href="/moedas/"><span class="ico">US$</span><strong>Dólar e moedas</strong><span>Cotação de hoje e conversor</span></a></li>{% endif %}
   {% if regras %}<li><a href="/calculadoras/decimo-terceiro/"><span class="ico">13º</span><strong>13º salário</strong><span>Valor líquido das parcelas</span></a></li>
   <li><a href="/calculadoras/salario-liquido/"><span class="ico">R$</span><strong>Salário líquido</strong><span>Desconto de INSS e IR</span></a></li>{% endif %}
+  {% if regras and regras.ipva %}<li><a href="/ipva/"><span class="ico">IPVA</span><strong>IPVA {{ regras.ipva.proximo }}</strong><span>Calculadora por estado</span></a></li>{% endif %}
   {% if bcb %}<li><a href="/quanto-rende/"><span class="ico">%</span><strong>Quanto rende</strong><span>Poupança, CDB e Tesouro</span></a></li>{% endif %}
   {% if comb %}<li><a href="/calculadoras/custo-da-viagem/"><span class="ico">km</span><strong>Custo da viagem</strong><span>Gasto de combustível no trajeto</span></a></li>{% endif %}
   {% if tem_energia %}<li><a href="/conta-de-luz/"><span class="ico">kWh</span><strong>Conta de luz</strong><span>Tarifa e bandeira do mês</span></a></li>{% endif %}

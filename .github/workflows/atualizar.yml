@@ -2,13 +2,11 @@ name: Atualizar dados e publicar site
 
 on:
   schedule:
-    # Horários em UTC (Brasília = UTC-3): 07:17, 11:17, 14:17 (após a PTAX) e 19:17.
-    # Segunda a quarta também às 16:47, quando a ANP costuma publicar a pesquisa da semana.
-    - cron: "17 10 * * *"
-    - cron: "17 14 * * *"
-    - cron: "17 17 * * *"
-    - cron: "17 22 * * *"
-    - cron: "47 19 * * 1-3"
+    # Confere as fontes de hora em hora em dias úteis, das 7h às 21h de Brasília (UTC-3),
+    # e a cada 4 horas no fim de semana. Só publica o site quando algum dado mudou.
+    - cron: "17 10-23 * * 1-5"
+    - cron: "47 0 * * 2-6"
+    - cron: "17 2,10,14,18,22 * * 0,6"
   workflow_dispatch:   # botão "Run workflow" para rodar na hora
   push:
     branches: [main]
@@ -16,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
   pages: write
   id-token: write
   deployments: read
@@ -28,8 +27,14 @@ jobs:
   atualizar:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      publicar: ${{ steps.mudou.outputs.publicar }}
+      avisar: ${{ steps.mudou.outputs.avisar }}
+      hash_site: ${{ steps.mudou.outputs.hash_site }}
+      hash_busca: ${{ steps.mudou.outputs.hash_busca }}
     steps:
       - uses: actions/checkout@v4
+        with:
 
       - uses: actions/setup-python@v5
         with:
@@ -64,16 +69,78 @@ jobs:
             done
           fi
 
+      - name: Conferir a saúde do robô (cada fonte está em dia?)
+        id: saude
+        run: |
+          python robo/verificar.py && echo "ok=1" >> $GITHUB_OUTPUT || echo "ok=0" >> $GITHUB_OUTPUT
+
+      - name: Abrir ou fechar alerta de dado atrasado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
+        run: |
+          aberto=$(gh issue list --label robo-alerta --state open --json number -q '.[0].number')
+          if [ "${{ steps.saude.outputs.ok }}" = "0" ]; then
+            gh label create robo-alerta --color D93F0B --description "Alerta automático do robô" 2>/dev/null || true
+            if [ -z "$aberto" ]; then
+              gh issue create --title "Robô: há dados atrasados" --label robo-alerta --body-file alerta.md
+            else
+              gh issue comment "$aberto" --body-file alerta.md >/dev/null 2>&1 || true
+            fi
+          elif [ -n "$aberto" ]; then
+            gh issue close "$aberto" --comment "Tudo em dia de novo. Fechado automaticamente."
+          fi
+          rm -f alerta.md
+
+      - name: Impressão digital do conteúdo (dados + código do site)
+        id: hash
+        run: |
+          echo "site=$(git rev-parse HEAD:dados HEAD:templates HEAD:static HEAD:robo HEAD:raiz HEAD:config.json HEAD:regras.json | sha1sum | cut -c1-16)" >> $GITHUB_OUTPUT
+          echo "busca=$(git rev-parse HEAD:dados/anp HEAD:dados/fipe | sha1sum | cut -c1-16)" >> $GITHUB_OUTPUT
+
+      - name: Este conteúdo já está no ar?
+        id: ja
+        uses: actions/cache/restore@v4
+        with:
+          path: .publicado
+          key: publicado-${{ steps.hash.outputs.site }}
+          lookup-only: true
+
+      - name: Os buscadores já foram avisados destes dados?
+        id: avisado
+        uses: actions/cache/restore@v4
+        with:
+          path: .avisado
+          key: avisado-${{ steps.hash.outputs.busca }}
+          lookup-only: true
+
+      - name: Decidir se precisa publicar
+        id: mudou
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ] || [ "${{ steps.ja.outputs.cache-hit }}" != "true" ]; then
+            echo "publicar=true" >> $GITHUB_OUTPUT
+          else
+            echo "Nada mudou desde a última publicação. Site mantido como está."
+            echo "publicar=false" >> $GITHUB_OUTPUT
+          fi
+          if [ "${{ steps.avisado.outputs.cache-hit }}" != "true" ]; then echo "avisar=true" >> $GITHUB_OUTPUT; else echo "avisar=false" >> $GITHUB_OUTPUT; fi
+          echo "hash_site=${{ steps.hash.outputs.site }}" >> $GITHUB_OUTPUT
+          echo "hash_busca=${{ steps.hash.outputs.busca }}" >> $GITHUB_OUTPUT
+
       - name: Gerar o site
+        if: steps.mudou.outputs.publicar == 'true'
         run: python robo/gerar_site.py
 
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - if: steps.mudou.outputs.publicar == 'true'
+        uses: actions/configure-pages@v5
+      - if: steps.mudou.outputs.publicar == 'true'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: public
 
   publicar:
     needs: atualizar
+    if: needs.atualizar.outputs.publicar == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -95,11 +162,27 @@ jobs:
         with:
           timeout: 900000
 
+      - name: Marcar este conteúdo como publicado
+        run: echo "${{ needs.atualizar.outputs.hash_site }}" > .publicado
+      - uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: .publicado
+          key: publicado-${{ needs.atualizar.outputs.hash_site }}
+
       - name: Avisar buscadores (IndexNow - Bing, Yandex e outros)
-        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '17 14 * * *' || github.event.schedule == '47 19 * * 1-3'
+        if: needs.atualizar.outputs.avisar == 'true'
         continue-on-error: true
         run: |
           sleep 60
           curl -fsS https://bolsohoje.com.br/sitemap.xml | grep -o '<loc>[^<]*' | sed 's/<loc>//' | head -n 10000 > urls.txt
           python3 -c "import json;u=open('urls.txt').read().split();print(json.dumps({'host':'bolsohoje.com.br','key':'abec578a1f121d37c607047dbd2212c9','keyLocation':'https://bolsohoje.com.br/abec578a1f121d37c607047dbd2212c9.txt','urlList':u}))" > corpo.json
           curl -sS -o /dev/null -w "IndexNow: HTTP %{http_code} ($(wc -l < urls.txt) endereços)\n" -X POST https://api.indexnow.org/indexnow -H 'Content-Type: application/json; charset=utf-8' --data @corpo.json
+          echo "${{ needs.atualizar.outputs.hash_busca }}" > .avisado
+
+      - if: needs.atualizar.outputs.avisar == 'true'
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: .avisado
+          key: avisado-${{ needs.atualizar.outputs.hash_busca }}

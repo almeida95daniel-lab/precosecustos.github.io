@@ -1,0 +1,9 @@
+{
+  "nota": "Bandeiras anunciadas pela ANEEL que ainda não estão nos dados abertos. O robô usa este registro só até o dado oficial chegar.",
+  "meses": {
+    "2026-11": "Verde"
+  },
+  "fontes": {
+    "2026-11": "Anúncio da ANEEL em 30/10/2026"
+  }
+}

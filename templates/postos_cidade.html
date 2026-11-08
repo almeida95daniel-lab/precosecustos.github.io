@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% set n = c.lista_postos|length %}
+{% block titulo %}Postos de combustível em {{ c.nome }} ({{ c.uf }}): {{ n }} postos e preços | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Lista dos {{ n }} postos de {{ c.nome }} pesquisados pela ANP, com preço da gasolina, etanol e diesel em cada um. Pesquisa de {{ comb.fim|data_br }}.{% endblock %}
+{% block conteudo %}
+{{ m.trilha([("/", "Início"), ("/combustivel/", "Combustível"), (est.url, est.nome), (c.url, c.nome), (None, "Postos")]) }}
+<h1>Postos de combustível em {{ c.nome }} ({{ c.uf }})</h1>
+<p class="lead">{{ n }} postos pesquisados pela ANP de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}, do mais barato ao mais caro na gasolina.</p>
+<input class="filtro" type="search" id="filtro-postos" placeholder="Filtrar por nome, rua ou bairro" aria-label="Filtrar postos">
+<div class="tabela-rolagem"><table id="tabela-postos">
+  <thead><tr><th>Posto</th><th class="n">Gasolina</th><th class="n">Etanol</th><th class="n some-celular">Diesel S10</th></tr></thead>
+  <tbody>{% for p in c.lista_postos %}<tr><td><a href="{{ p.url }}"><strong>{{ p.nome }}</strong></a><br><span class="meta">{{ p.endereco }}{% if p.bairro %}, {{ p.bairro }}{% endif %}</span></td>
+  {% for k in ("gasolina", "etanol", "diesel_s10") %}<td class="n{{ ' some-celular' if k == 'diesel_s10' }}">{% if p.precos.get(k) %}{{ p.precos[k]|brl(2 if ((p.precos[k]*1000)|round|int) % 10 == 0 else 3) }}{% else %}–{% endif %}</td>{% endfor %}</tr>{% endfor %}</tbody>
+</table></div>
+<p><a href="{{ c.url }}">Preço médio dos combustíveis em {{ c.nome }}</a></p>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var f = document.getElementById("filtro-postos"), linhas = document.querySelectorAll("#tabela-postos tbody tr");
+  function sem(s) { return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+  f.addEventListener("input", function () { var q = sem(f.value.trim()); linhas.forEach(function (tr) { tr.hidden = q && sem(tr.textContent).indexOf(q) < 0; }); });
+})();
+</script>
+{% endblock %}

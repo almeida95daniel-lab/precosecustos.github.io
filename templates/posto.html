@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% set band = p.bandeira if p.bandeira and p.bandeira|lower not in ("branca", "bandeira branca") else "" %}
+{% set g = p.precos.get("gasolina") %}
+{% block titulo %}{{ p.nome }}, {{ c.nome }} ({{ c.uf }}): preço{% if g %} da gasolina {{ g|brl(2 if ((g*1000)|round|int) % 10 == 0 else 3) }}{% else %}s hoje{% endif %} | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Preços de {{ p.nome }}{% if band %} ({{ band }}){% endif %}, {{ p.endereco }}{% if p.bairro %}, {{ p.bairro }}{% endif %}, {{ c.nome }}: {% for prod, v in p.precos.items() %}{{ PRODUTOS[prod].nome|lower }} {{ v|brl }}{{ ", " if not loop.last }}{% endfor %}. Pesquisa ANP de {{ comb.fim|data_br }}.{% endblock %}
+{% block conteudo %}
+{{ m.trilha([("/", "Início"), ("/combustivel/", "Combustível"), (est.url, est.nome), (c.url, c.nome), (c.url_postos, "Postos"), (None, p.nome)]) }}
+<h1>{{ p.nome }}</h1>
+<p class="lead">{% if band %}Bandeira {{ band }}. {% endif %}{{ p.endereco }}{% if p.bairro %}, {{ p.bairro }}{% endif %}, {{ c.nome }} ({{ c.uf }}).
+<a href="https://www.google.com/maps/search/?api=1&amp;query={{ (p.nome ~ ', ' ~ p.endereco ~ ', ' ~ c.nome ~ ' ' ~ c.uf)|urlencode }}" rel="nofollow noopener" target="_blank">Ver no mapa</a></p>
+
+<div class="placa">
+  {% for prod, v in p.precos.items() %}
+  {% set med = c.produtos.get(prod) %}
+  <div class="placa-linha">
+    <span class="placa-nome">{{ PRODUTOS[prod].nome }}</span>
+    <span class="placa-preco"><small>R$</small>{{ v|num(2 if ((v*1000)|round|int) % 10 == 0 else 3) }}</span>
+    <span class="placa-sub">{% if med %}{% set dif = (v / med.medio - 1) * 100 %}{% if dif|abs < 0.5 %}na média da cidade{% elif dif < 0 %}{{ (-dif)|num(1) }}% abaixo da média ({{ med.medio|brl }}){% else %}{{ dif|num(1) }}% acima da média ({{ med.medio|brl }}){% endif %}{% else %}por {{ PRODUTOS[prod].unidade }}{% endif %}</span>
+  </div>
+  {% endfor %}
+  <p class="placa-rodape">Coletado pela ANP em {{ p.coleta }}. Confirme na bomba: o preço pode ter mudado.</p>
+</div>
+
+{% set prod_h = "gasolina" if p.hist.get("gasolina") else (p.hist.keys()|list|first if p.hist else none) %}
+{% if prod_h and p.hist[prod_h]|length > 1 %}
+<h2>Histórico neste posto</h2>
+{{ grafico(serie_posto(p.hist, prod_h), titulo=PRODUTOS[prod_h].nome ~ " em " ~ p.nome ~ ", semana a semana") }}
+{% endif %}
+
+{% if outros %}
+<h2>Outros postos em {{ c.nome }}</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Posto</th><th class="n">Gasolina</th></tr></thead>
+  <tbody>{% for o in outros %}<tr><td><a href="{{ o.url }}">{{ o.nome }}</a><br><span class="meta">{{ o.endereco }}{% if o.bairro %}, {{ o.bairro }}{% endif %}</span></td><td class="n">{{ o.precos.gasolina|brl(2 if ((o.precos.gasolina*1000)|round|int) % 10 == 0 else 3) }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+<p><a href="{{ c.url_postos }}">Todos os postos de {{ c.nome }}</a> · <a href="{{ c.url }}">Preço médio em {{ c.nome }}</a></p>
+<p class="nota">Dados públicos do Levantamento de Preços de Combustíveis da ANP. {{ p.razao }}{% if p.cep %}, CEP {{ p.cep }}{% endif %}.</p>
+{% endblock %}

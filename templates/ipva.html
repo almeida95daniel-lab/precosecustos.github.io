@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% set I = regras.ipva %}
+{% set uf_sel = uf or "" %}
+{% set al = I.aliquotas[uf_sel] if uf_sel else none %}
+{% block titulo %}{% if uf_sel %}IPVA {{ I.proximo }} {{ UFS[uf_sel] }}: alíquota de {{ al.carro[0]|num(2)|replace(",00", "") }}%{% if al.carro[1] != al.carro[0] %} a {{ al.carro[1]|num(2)|replace(",00", "") }}%{% endif %} e calculadora{% else %}IPVA {{ I.proximo }}: calculadora e alíquota de cada estado{% endif %} | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}{% if uf_sel %}Quanto vai custar o IPVA {{ I.proximo }} em {{ UFS[uf_sel] }}: alíquota para carro e moto, cálculo pelo valor da Tabela FIPE e o que muda.{% else %}Calcule o IPVA {{ I.proximo }} do seu carro ou moto pelo valor da Tabela FIPE e veja a alíquota dos 27 estados.{% endif %}{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), ("/ipva/", "IPVA")] + ([(None, UFS[uf_sel])] if uf_sel else []) if uf_sel else [("/", "Início"), (None, "IPVA")]) }}
+<h1>{% if uf_sel %}IPVA {{ I.proximo }} em {{ UFS[uf_sel] }}{% else %}Calculadora de IPVA {{ I.proximo }}{% endif %}</h1>
+<p class="lead">O IPVA é um percentual do valor do veículo, que cada estado calcula com base na Tabela FIPE. Digite o valor do seu carro ou moto para estimar.</p>
+
+<section class="calc" aria-labelledby="calc-t">
+  <h2 id="calc-t" style="margin-top:0">Calcular</h2>
+  <div class="campos">
+    <div class="campo"><label for="i-uf">Estado</label><select id="i-uf">{% for u, a in I.aliquotas.items() %}<option value="{{ u }}"{% if u == (uf_sel or "SP") %} selected{% endif %}>{{ UFS[u] }}</option>{% endfor %}</select></div>
+    <div class="campo"><label for="i-tipo">Veículo</label><select id="i-tipo"><option value="carro">Carro</option><option value="moto">Moto</option></select></div>
+    <div class="campo"><label for="i-valor">Valor na Tabela FIPE (R$)</label><input id="i-valor" type="number" min="0" step="100" value="70000" inputmode="decimal"><p class="ajuda">Não sabe? <a href="/tabela-fipe/">Consulte a FIPE</a>.</p></div>
+  </div>
+  <div class="resultado" aria-live="polite"><p class="nota" style="margin:0">IPVA estimado</p><p class="resultado-grande" id="i-res">–</p><p class="nota" id="i-det"></p></div>
+</section>
+
+{% if uf_sel %}
+<h2>Alíquota em {{ UFS[uf_sel] }}</h2>
+<ul>
+  <li><strong>Carro:</strong> {{ al.carro[0]|num(2)|replace(",00", "") }}%{% if al.carro[1] != al.carro[0] %} a {{ al.carro[1]|num(2)|replace(",00", "") }}%, conforme potência, combustível ou tipo{% endif %}.</li>
+  <li><strong>Moto:</strong> {{ al.moto[0]|num(2)|replace(",00", "") }}%{% if al.moto[1] != al.moto[0] %} a {{ al.moto[1]|num(2)|replace(",00", "") }}%, conforme a cilindrada{% endif %}.</li>
+</ul>
+<p>Um carro de R$ 70.000 paga {% if al.carro[1] != al.carro[0] %}entre {{ (70000 * al.carro[0] / 100)|brl(0) }} e {{ (70000 * al.carro[1] / 100)|brl(0) }}{% else %}{{ (70000 * al.carro[0] / 100)|brl(0) }}{% endif %} por ano em {{ UFS[uf_sel] }}.</p>
+{% endif %}
+
+<h2>Alíquota de cada estado</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Estado</th><th class="n">Carro</th><th class="n">Moto</th></tr></thead>
+  <tbody>{% for u, a in I.aliquotas.items() %}<tr{% if u == uf_sel %} class="vencedor"{% endif %}><td><a href="/ipva/{{ u|lower }}/">{{ UFS[u] }}</a></td><td class="n">{{ a.carro[0]|num(2)|replace(",00", "") }}%{% if a.carro[1] != a.carro[0] %} a {{ a.carro[1]|num(2)|replace(",00", "") }}%{% endif %}</td><td class="n">{{ a.moto[0]|num(2)|replace(",00", "") }}%{% if a.moto[1] != a.moto[0] %} a {{ a.moto[1]|num(2)|replace(",00", "") }}%{% endif %}</td></tr>{% endfor %}</tbody>
+</table></div>
+<p class="nota">Alíquotas em vigor em {{ I.ano_aliquotas }}. Os estados costumam divulgar o valor do IPVA {{ I.proximo }} e o calendário de pagamento entre dezembro e janeiro; mudanças aprovadas até lá serão atualizadas aqui. Elétricos, híbridos, carros antigos e pessoas com deficiência podem ter isenção ou desconto. Confirme sempre na Secretaria da Fazenda do seu estado.</p>
+
+{{ mc.faq([
+  ("Como o IPVA é calculado?", "O estado multiplica o valor venal do veículo (em geral, a Tabela FIPE de um mês de referência do ano anterior) pela alíquota. Um carro de R$ 70.000 com alíquota de 4% paga R$ 2.800."),
+  ("Quando sai o IPVA " ~ I.proximo ~ "?", "A maioria dos estados divulga os valores e o calendário entre dezembro e janeiro. O pagamento à vista costuma ter desconto."),
+  ("Carro usado paga menos IPVA?", "Sim, porque o valor da FIPE cai com o tempo. Em vários estados, veículos com mais de 15 ou 20 anos são isentos.")
+]) }}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var A = {{ I.aliquotas|tojson }};
+  var uf = document.getElementById("i-uf"), tipo = document.getElementById("i-tipo"), valor = document.getElementById("i-valor");
+  var res = document.getElementById("i-res"), det = document.getElementById("i-det");
+  function pct(x) { return BH.num(x, x % 1 ? 2 : 0).replace(/,?0+$/, "") + "%"; }
+  function calc() {
+    var a = A[uf.value][tipo.value], v = BH.ler(valor);
+    if (!(v > 0)) { res.textContent = "–"; det.textContent = ""; return; }
+    var lo = v * a[0] / 100, hi = v * a[1] / 100;
+    res.textContent = lo === hi ? BH.brl(lo, 2) : BH.brl(lo, 2) + " a " + BH.brl(hi, 2);
+    det.textContent = "Alíquota " + (a[0] === a[1] ? pct(a[0]) : "de " + pct(a[0]) + " a " + pct(a[1])) + " sobre " + BH.brl(v, 0) + ". Parcelado, o total é o mesmo; à vista, muitos estados dão desconto.";
+  }
+  [uf, tipo, valor].forEach(function (el) { el.addEventListener("input", calc); el.addEventListener("change", calc); });
+  calc();
+})();
+</script>
+{% endblock %}
