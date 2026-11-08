@@ -6,6 +6,9 @@
 {{ mc.trilha([("/", "Início"), ("/tabela-fipe/", "Tabela FIPE"), (None, marca.nome)]) }}
 <h1>Tabela FIPE {{ marca.nome }}</h1>
 <p class="lead">{{ marca.modelos|length }} {{ "modelo" if marca.modelos|length == 1 else "modelos" }} de {{ info.nome|lower }} {{ marca.nome }} na tabela de {{ info.ref.mes }}. Clique no modelo para ver o preço de cada ano.</p>
+{% if marca.familias %}<h2>Modelos por nome</h2>
+<ul class="chips chips-claros">{% for f in marca.familias %}<li><a href="{{ f.url }}">{{ f.nome }}</a></li>{% endfor %}</ul>
+<h2>Todas as versões</h2>{% endif %}
 <div class="tabela-rolagem"><table>
   <thead><tr><th>Modelo</th><th class="n">Anos</th><th class="n">Preço FIPE</th></tr></thead>
   <tbody>

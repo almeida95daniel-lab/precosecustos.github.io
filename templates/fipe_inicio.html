@@ -14,6 +14,12 @@
 </form>
 <div id="fipe-res" aria-live="polite"></div>
 {% set populares = ["Fiat", "Volkswagen", "VW - VolksWagen", "Chevrolet", "GM - Chevrolet", "Toyota", "Hyundai", "Renault", "Jeep", "Honda", "HONDA", "Nissan", "BYD", "YAMAHA"] %}
+{% set top = ["Onix", "HB20", "Strada", "Gol", "Polo", "Kwid", "Argo", "Mobi", "Corolla", "Compass", "T-Cross", "Creta", "Hilux", "Toro", "Tracker", "CG", "Biz", "Fazer"] %}
+<p class="nota" style="margin-bottom:4px">Modelos mais procurados:</p>
+<ul class="chips chips-claros" aria-label="Modelos mais procurados">
+{% for nomef in top %}{% for tipo, info in fipe.items() %}{% for marca in info.marcas %}{% for f in marca.familias if f.nome|lower == nomef|lower %}<li><a href="{{ f.url }}">{{ f.nome }}</a></li>{% endfor %}{% endfor %}{% endfor %}{% endfor %}
+</ul>
+<p class="nota" style="margin-bottom:4px">Marcas:</p>
 <ul class="chips chips-claros" aria-label="Marcas mais procuradas">
 {% for tipo, info in fipe.items() %}{% for marca in info.marcas if marca.nome in populares %}<li><a href="{{ marca.url }}">{{ marca.nome|title if marca.nome.isupper() else marca.nome }}{% if tipo == "motos" %} (motos){% endif %}</a></li>{% endfor %}{% endfor %}
 </ul>
@@ -49,7 +55,7 @@
       var termos = q.split(/\s+/);
       var achados = d.filter(function (x) { var t = sem(x[0] + " " + x[1]); return termos.every(function (p) { return t.indexOf(p) >= 0; }); }).slice(0, 30);
       if (!achados.length) { res.innerHTML = '<p class="nota">Nenhum modelo encontrado. Tente só o nome principal, como "Onix" ou "Strada".</p>'; return; }
-      res.innerHTML = '<div class="tabela-rolagem"><table><thead><tr><th>Modelo</th><th class="n">Mais recente</th></tr></thead><tbody>' +
+      res.innerHTML = '<div class="tabela-rolagem"><table><thead><tr><th>Modelo</th><th class="n">A partir de</th></tr></thead><tbody>' +
         achados.map(function (x) { return '<tr><td><a href="' + x[2] + '">' + x[0] + " " + x[1] + '</a></td><td class="n">' + BH.brl(x[3], 0) + "</td></tr>"; }).join("") +
         "</tbody></table></div>";
     });

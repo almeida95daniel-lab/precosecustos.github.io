@@ -22,7 +22,7 @@
 {% if g.minimo and g.maximo and g.maximo > g.minimo %}O preço mais baixo encontrado foi {{ g.minimo|brl }} e o mais alto, {{ g.maximo|brl }}. A diferença é de {{ (g.maximo - g.minimo)|brl }} por litro, ou {{ ((g.maximo - g.minimo)*40)|brl }} num tanque de 40 litros.{% endif %}{{ ' ' }}
 {% if eg %}
 {% set dif = (g.medio / eg.medio - 1) * 100 %}
-{% if dif|abs < 0.5 %}O valor está praticamente igual à média de {{ est.nome }} ({{ eg.medio|brl }}).{% elif dif < 0 %}É {{ (-dif)|num(1) }}% mais barato que a média de {{ est.nome }} ({{ eg.medio|brl }}).{% else %}É {{ dif|num(1) }}% mais caro que a média de {{ est.nome }} ({{ eg.medio|brl }}).{% endif %}{{ ' ' }}
+{% if dif|abs < 0.5 %}O valor está praticamente igual à média de {{ est.nome }} ({{ eg.medio|brl }}).{% elif dif < 0 %}É {{ (-dif)|num(1) }}% mais barato que a média de {{ est.nome }} ({{ eg.medio|brl }}).{% else %}É {{ dif|num(1) }}% mais caro que a média de {{ est.nome }} ({{ eg.medio|brl }}).{% endif %}{% set bg = comb.brasil.produtos.get("gasolina") %}{% if bg %} Na média do Brasil, o litro está em {{ bg.medio|brl }}.{% endif %}{{ ' ' }}
 {% endif %}
 {% if c.pos_estado %}Entre as {{ c.total_estado }} cidades pesquisadas no estado, {{ c.nome }} tem a {{ c.pos_estado }}ª gasolina mais barata.{% endif %}</p>
 {% endif %}

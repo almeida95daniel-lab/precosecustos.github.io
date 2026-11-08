@@ -45,6 +45,14 @@
   {% if bcb %}<li><a href="/calculadoras/corrigir-pela-inflacao/"><span class="ico">IPCA</span><strong>Corrigir pela inflação</strong><span>Quanto um valor antigo vale hoje</span></a></li>{% endif %}
 </ul>
 
+{% if fipe %}
+<h2>Tabela FIPE dos mais procurados</h2>
+{% set top = ["Onix", "HB20", "Strada", "Gol", "Polo", "Kwid", "Argo", "Mobi", "Corolla", "Compass", "T-Cross", "Creta", "Hilux", "Toro", "Tracker", "CG", "Biz"] %}
+<ul class="chips chips-claros">
+{% for nomef in top %}{% for tipo, info in fipe.items() %}{% for marca in info.marcas %}{% for f in marca.familias if f.nome|lower == nomef|lower %}<li><a href="{{ f.url }}">{{ marca.nome if tipo == "carros" else "Moto" }} {{ f.nome }}</a></li>{% endfor %}{% endfor %}{% endfor %}{% endfor %}
+</ul>
+{% endif %}
+
 {% if comb %}
 {{ m.tendencia(comb.brasil.produtos, "dos combustíveis") }}
 {% endif %}

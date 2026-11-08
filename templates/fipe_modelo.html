@@ -5,7 +5,7 @@
 {% block titulo %}Tabela FIPE {{ nome }}: {{ topo.valor|brl(0) }} ({{ info.ref.mes|replace(" de ", "/") }}) | {{ cfg.nome_site }}{% endblock %}
 {% block descricao %}Preço FIPE do {{ nome }} em {{ info.ref.mes }}: {% for a in mod.anos[:3] %}{{ a.ano }} por {{ a.valor|brl(0) }}{{ ", " if not loop.last }}{% endfor %}. Veja todos os anos, o código FIPE e a variação do mês.{% endblock %}
 {% block conteudo %}
-{{ mc.trilha([("/", "Início"), ("/tabela-fipe/", "Tabela FIPE"), (marca.url, marca.nome), (None, mod.nome)]) }}
+{{ mc.trilha([("/", "Início"), ("/tabela-fipe/", "Tabela FIPE"), (marca.url, marca.nome)] + ([(mod.fam.url, mod.fam.nome)] if mod.fam else []) + [(None, mod.nome)]) }}
 <h1>Tabela FIPE {{ nome }}</h1>
 <p class="lead">Preço médio na tabela de {{ info.ref.mes }}{% if topo.codigo_fipe %}. Código FIPE {{ topo.codigo_fipe }}{% endif %}.</p>
 
@@ -46,7 +46,7 @@
   <tbody>{% for x in irmaos %}<tr><td><a href="{{ x.url }}">{{ marca.nome }} {{ x.nome }}</a></td><td class="n">{% if x.min == x.max %}{{ x.min|brl(0) }}{% else %}{{ x.min|brl(0) }} a {{ x.max|brl(0) }}{% endif %}</td></tr>{% endfor %}</tbody>
 </table></div>
 {% endif %}
-<p><a href="{{ marca.url }}">Todos os modelos {{ marca.nome }}</a></p>
+{% if mod.fam %}<p><a href="{{ mod.fam.url }}">{{ marca.nome }} {{ mod.fam.nome }}: preço por ano</a> · <a href="{{ marca.url }}">Todos os modelos {{ marca.nome }}</a></p>{% else %}<p><a href="{{ marca.url }}">Todos os modelos {{ marca.nome }}</a></p>{% endif %}
 
 {{ mc.faq([
   ("Quanto custa um " ~ nome ~ " na Tabela FIPE?", "Na tabela de " ~ info.ref.mes ~ ", o " ~ nome ~ " " ~ topo.ano ~ " vale em média " ~ topo.valor|brl(0) ~ "."),

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% set nome = marca.nome ~ " " ~ fam.nome %}
+{% block titulo %}Tabela FIPE {{ nome }} {{ info.ref.mes|replace(" de ", "/") }}: preço por ano | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Preço FIPE do {{ nome }} em {{ info.ref.mes }}, ano a ano: de {{ fam.min|brl(0) }} a {{ fam.max|brl(0) }}, em {{ fam.versoes }} versões.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), ("/tabela-fipe/", "Tabela FIPE"), (marca.url, marca.nome), (None, fam.nome)]) }}
+<h1>Tabela FIPE {{ nome }}</h1>
+<p class="lead">Tabela de {{ info.ref.mes }}: de {{ fam.min|brl(0) }} a {{ fam.max|brl(0) }}, somando {{ fam.versoes }} {{ "versão" if fam.versoes == 1 else "versões" }}. Escolha o ano.</p>
+<ul class="chips chips-claros" aria-label="Anos">{% for a in fam.anos %}<li><a href="{{ a.url }}">{{ a.ano }}</a></li>{% endfor %}</ul>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Ano</th><th class="n">Mais barata</th><th class="n">Mais cara</th><th class="n some-celular">Versões</th></tr></thead>
+  <tbody>{% for a in fam.anos %}<tr><td><a href="{{ a.url }}">{{ nome }} {{ a.ano }}</a></td><td class="n">{{ a.min|brl(0) }}</td><td class="n">{{ a.max|brl(0) }}</td><td class="n some-celular">{{ a.itens|length }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% set novos = fam.anos|rejectattr("slug", "equalto", "zero-km")|list %}
+{% if novos|length >= 6 %}
+{% set a0, a5 = novos[0], novos[5] %}
+<p>Em média, um {{ nome }} {{ a5.ano }} custa {{ ((1 - (a5.min + a5.max) / (a0.min + a0.max)) * 100)|num(0) }}% menos que um {{ a0.ano }} na Tabela FIPE.</p>
+{% endif %}
+<p><a href="{{ marca.url }}">Todos os {{ info.nome|lower }} {{ marca.nome }}</a></p>
+<p class="nota">Fonte: Tabela FIPE de {{ info.ref.mes }}. Valores de referência; não substituem a avaliação do veículo.</p>
+{% endblock %}

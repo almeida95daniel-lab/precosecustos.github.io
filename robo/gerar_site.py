@@ -330,6 +330,9 @@ def nome_valor(v):
 NOME_TIPO = {"carros": ("Carros", "carro"), "motos": ("Motos", "moto")}
 
 
+ANO_MIN_FAMILIA = 2008
+
+
 def montar_fipe():
     """{tipo: {"ref", "marcas": [ {nome, slug, url, modelos: [...]} ]}} a partir de dados/fipe/<tipo>.json."""
     saida = {}
@@ -358,7 +361,42 @@ def montar_fipe():
                 valores = [x["valor"] for x in anos]
                 modelos.append({"nome": modelo, "slug": oslug, "anos": anos, "min": min(valores), "max": max(valores),
                                 "url": f"/tabela-fipe/{tipo}/{mslug}/{oslug}/", "familia": modelo.split()[0].lower()})
-            marcas.append({"nome": nome_marca, "slug": mslug, "url": f"/tabela-fipe/{tipo}/{mslug}/", "modelos": modelos})
+            # famílias (Onix, Gol, CG...) e páginas família + ano, que são como as pessoas buscam
+            fams = defaultdict(list)
+            for mod in modelos:
+                fams[mod["familia"]].append(mod)
+            familias = []
+            for fam, mods in sorted(fams.items()):
+                fslug = slug(fam)
+                if not fslug:
+                    continue
+                for mod in mods:
+                    if mod["slug"] == fslug:
+                        mod["slug"] = fslug + "-versao"
+                        mod["url"] = f"/tabela-fipe/{tipo}/{mslug}/{mod['slug']}/"
+                orig = mods[0]["nome"].split()[0]
+                nome_fam = orig.title() if orig.isupper() and len(orig) > 2 and "-" not in orig and not any(ch.isdigit() for ch in orig) else orig
+                anos_f = defaultdict(list)
+                for mod in mods:
+                    for a in mod["anos"]:
+                        if a["ordem"] == 32000 or a["ordem"] >= ANO_MIN_FAMILIA:
+                            anos_f[a["ordem"]].append({"mod": mod, "a": a})
+                lista_anos = []
+                for ordem in sorted(anos_f, reverse=True):
+                    itens = sorted(anos_f[ordem], key=lambda x: x["a"]["valor"])
+                    rot = "zero-km" if ordem == 32000 else str(ordem)
+                    lista_anos.append({"ano": "Zero km" if ordem == 32000 else str(ordem), "slug": rot, "itens": itens,
+                                       "min": itens[0]["a"]["valor"], "max": itens[-1]["a"]["valor"],
+                                       "url": f"/tabela-fipe/{tipo}/{mslug}/{fslug}/{rot}/"})
+                if not lista_anos:
+                    continue
+                f = {"nome": nome_fam, "slug": fslug, "url": f"/tabela-fipe/{tipo}/{mslug}/{fslug}/", "anos": lista_anos,
+                     "versoes": len(mods), "min": min(x["min"] for x in lista_anos), "max": max(x["max"] for x in lista_anos)}
+                familias.append(f)
+                for mod in mods:
+                    mod["fam"] = f
+            marcas.append({"nome": nome_marca, "slug": mslug, "url": f"/tabela-fipe/{tipo}/{mslug}/", "modelos": modelos,
+                           "familias": familias})
         marcas.sort(key=lambda x: x["nome"].lower())
         saida[tipo] = {"ref": base["referencia"], "marcas": marcas, "nome": NOME_TIPO[tipo][0],
                        "singular": NOME_TIPO[tipo][1], "total": sum(len(x["modelos"]) for x in marcas)}
@@ -560,6 +598,11 @@ def main():
                     irmaos = [x for x in marca["modelos"] if x["familia"] == mod["familia"] and x is not mod][:12]
                     pagina(mod["url"], "fipe_modelo.html", 0.6, tipo=tipo, info=info, marca=marca, mod=mod, irmaos=irmaos)
                     busca.append([marca["nome"], mod["nome"], mod["url"], round(mod["anos"][0]["valor"])])
+                for fam in marca["familias"]:
+                    pagina(fam["url"], "fipe_familia.html", 0.7, tipo=tipo, info=info, marca=marca, fam=fam)
+                    for ano in fam["anos"]:
+                        pagina(ano["url"], "fipe_familia_ano.html", 0.6, tipo=tipo, info=info, marca=marca, fam=fam, fa=ano)
+                    busca.insert(0, [marca["nome"], fam["nome"] + " (todas as versões)", fam["url"], round(fam["anos"][0]["min"])])
         (SAIDA / "static" / "fipe-busca.json").write_text(json.dumps(busca, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     if moedas:
         pagina("/moedas/", "moedas.html", 0.9)
