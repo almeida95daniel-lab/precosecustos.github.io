@@ -248,3 +248,18 @@ button:hover { opacity: .9; }
 .chips-claros { margin: 0 0 8px; }
 .pular { margin-top: 14px; }
 .pular a { font-size: .88rem; }
+
+/* ---------- página inicial: o que você quer economizar */
+.metas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 22px 0 8px; }
+.meta-card { background: var(--superficie); border: 1px solid var(--linha); border-radius: 10px; padding: 16px 16px 12px; display: flex; flex-direction: column; scroll-margin-top: 120px; }
+.meta-card h2 { margin: 0 0 8px; font-size: 1.35rem; display: flex; align-items: center; gap: 10px; }
+.meta-card h2 .ico { flex: 0 0 auto; display: inline-grid; place-items: center; min-width: 44px; height: 36px; padding: 0 6px; border-radius: 8px; background: var(--destaque); color: #1A1D1F; font: 700 .9rem/1 var(--cond); }
+.meta-dica { margin: 0 0 10px; color: var(--tinta-2); font-size: .97rem; flex: 1; }
+.meta-links { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--linha); }
+.meta-links li { padding: 8px 0; border-bottom: 1px dashed var(--linha); }
+.meta-links li:last-child { border-bottom: 0; }
+.meta-links a { font-weight: 600; text-decoration: none; }
+.meta-links a:hover { text-decoration: underline; }
+.meta-links .meta { display: block; font-size: .84rem; }
+@media (max-width: 900px) { .metas { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .metas { grid-template-columns: 1fr; gap: 10px; } }

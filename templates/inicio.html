@@ -1,23 +1,111 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m %}
-{% block titulo %}{{ cfg.nome_site }}: preço da gasolina na sua cidade, dólar, FIPE e juros hoje{% endblock %}
+{% block titulo %}{{ cfg.nome_site }}: economize no combustível, no carro, no câmbio e na conta de luz{% endblock %}
+{% block descricao %}Preço da gasolina em cada posto da sua cidade, Tabela FIPE, IPVA, dólar, conta de luz e calculadoras de 13º e investimentos. Dados oficiais atualizados todo dia.{% endblock %}
 {% block conteudo %}
-<section class="capa">
-  <h1>Quanto está a gasolina na sua cidade?</h1>
-  {% if comb %}
-  <p class="lead">Pesquisa da ANP de {{ comb.inicio|data_br }} a {{ comb.fim|data_br }}, em {{ comb.cidades|length }} cidades.</p>
-  {{ m.busca() }}
-  {% set capitais = ["São Paulo", "Rio de Janeiro", "Belo Horizonte", "Curitiba", "Florianópolis", "Porto Alegre", "Brasília", "Salvador", "Recife", "Goiânia"] %}
-  <ul class="chips" aria-label="Capitais">
-    {% for nome in capitais %}{% for c in comb.cidades if c.nome == nome %}{% if loop.first %}<li><a href="{{ c.url }}">{{ c.nome }}</a></li>{% endif %}{% endfor %}{% endfor %}
-  </ul>
-  {% else %}
-  <p class="lead">Os preços aparecem aqui assim que o robô concluir a coleta da ANP.</p>
-  {% endif %}
-</section>
-
 {% set usd = (moedas|selectattr("codigo", "equalto", "USD")|first) if moedas else none %}
 {% set eur = (moedas|selectattr("codigo", "equalto", "EUR")|first) if moedas else none %}
+{% if comb %}
+{% set com_g = comb.cidades|selectattr("produtos.gasolina", "defined")|sort(attribute="produtos.gasolina.medio")|list %}
+{% set barata = com_g|first %}
+{% set ns = namespace(etanol=0, estados=0) %}
+{% for est in comb.estados.values() if est.razao %}{% set ns.estados = ns.estados + 1 %}{% if est.razao <= regra %}{% set ns.etanol = ns.etanol + 1 %}{% endif %}{% endfor %}
+{% endif %}
+
+<section class="capa">
+  <h1>O que você quer economizar hoje?</h1>
+  <p class="lead">Preços oficiais de combustível, carros, câmbio e energia, atualizados sozinhos todos os dias.</p>
+  <form class="busca busca-geral" role="search" action="/combustivel/" autocomplete="off">
+    <label class="so-leitor" for="busca-geral">Busque uma cidade, um carro ou uma moeda</label>
+    <input id="busca-geral" type="search" placeholder="Sua cidade, um carro (ex.: Onix) ou uma moeda" autocomplete="off" aria-autocomplete="list" aria-controls="sugestoes-geral">
+    <button type="submit">Buscar</button>
+    <ul class="sugestoes" id="sugestoes-geral" role="listbox" hidden></ul>
+    <p class="busca-msg nota" aria-live="polite" style="flex-basis:100%;margin:0"></p>
+  </form>
+  <ul class="chips" aria-label="Atalhos">
+    <li><a href="#abastecer">Abastecer</a></li>
+    {% if fipe %}<li><a href="#carro">Carro</a></li>{% endif %}
+    {% if moedas %}<li><a href="#viagem">Viagem e câmbio</a></li>{% endif %}
+    {% if tem_energia %}<li><a href="#luz">Conta de luz</a></li>{% endif %}
+    {% if regras %}<li><a href="#salario">Salário e 13º</a></li>{% endif %}
+    {% if bcb %}<li><a href="#dinheiro">Fazer o dinheiro render</a></li>{% endif %}
+  </ul>
+</section>
+
+<div class="metas">
+  {% if comb %}
+  <section class="meta-card" id="abastecer">
+    <h2><span class="ico">R$/L</span>Abastecer mais barato</h2>
+    <p class="meta-dica">{% if barata %}A gasolina mais barata do Brasil esta semana está em <a href="{{ barata.url }}">{{ barata.nome }} ({{ barata.uf }})</a>: {{ barata.produtos.gasolina.medio|brl }}.{% endif %} Na média do país, {{ comb.brasil.produtos.gasolina.medio|brl }} o litro{% if comb.brasil.produtos.gasolina.var is not none %} ({{ comb.brasil.produtos.gasolina.var|seta|striptags|trim }} na semana){% endif %}.</p>
+    <ul class="meta-links">
+      <li><a href="/combustivel/">Preço em cada cidade e posto</a></li>
+      <li><a href="/combustivel/etanol-ou-gasolina/">Etanol ou gasolina?</a> {% if ns.estados %}<span class="meta">o etanol compensa em {{ ns.etanol }} de {{ ns.estados }} estados</span>{% endif %}</li>
+      <li><a href="/calculadoras/custo-da-viagem/">Quanto vou gastar na viagem</a></li>
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if fipe %}
+  <section class="meta-card" id="carro">
+    <h2><span class="ico">FIPE</span>Comprar, vender ou manter o carro</h2>
+    <p class="meta-dica">Tabela FIPE de {{ (fipe.values()|first).ref.mes }} com {{ ((fipe.carros.total if fipe.carros else 0) + (fipe.motos.total if fipe.motos else 0))|num(0) }} versões de carros e motos. Saiba quanto vale antes de negociar.</p>
+    <ul class="meta-links">
+      <li><a href="/tabela-fipe/">Tabela FIPE</a> <span class="meta">preço por modelo e ano</span></li>
+      {% if regras and regras.ipva %}<li><a href="/ipva/">IPVA {{ regras.ipva.proximo }}</a> <span class="meta">calcule pelo seu estado</span></li>{% endif %}
+      <li><a href="/quanto-rende/">Financiar ou juntar dinheiro?</a></li>
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if moedas %}
+  <section class="meta-card" id="viagem">
+    <h2><span class="ico">US$</span>Viajar e comprar no exterior</h2>
+    <p class="meta-dica">{% if usd %}Dólar a {{ usd.valor|brl(2) }}{% if usd.var30 is not none %}, {{ "+" if usd.var30 > 0 }}{{ usd.var30|num(1) }}% em 30 dias{% endif %}.{% endif %} No cartão, some cerca de {{ iof|num(1) }}% de IOF e a margem do banco.</p>
+    <ul class="meta-links">
+      <li><a href="/converter/100-dolares-em-reais/">100 dólares em reais</a>{% if eur %} · <a href="/converter/100-euros-em-reais/">100 euros</a>{% endif %}</li>
+      <li><a href="/moedas/">Todas as moedas e conversor</a></li>
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if tem_energia %}
+  <section class="meta-card" id="luz">
+    <h2><span class="ico">kWh</span>Pagar menos na conta de luz</h2>
+    <p class="meta-dica">{% if energia.atual %}Bandeira {{ energia.atual.bandeira|lower }} em {{ (energia.atual.mes ~ "-01")|data_br("mes") }}{% if (energia.adicional.get(energia.atual.bandeira) or 0) == 0 %}: sem cobrança extra neste mês{% else %}: {{ energia.adicional[energia.atual.bandeira]|brl(2) }} a mais a cada 100 kWh{% endif %}.{% endif %}</p>
+    <ul class="meta-links">
+      <li><a href="/conta-de-luz/">Tarifa da sua distribuidora e gasto por aparelho</a></li>
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if regras %}
+  <section class="meta-card" id="salario">
+    <h2><span class="ico">13º</span>Salário e 13º</h2>
+    <p class="meta-dica">A 1ª parcela do 13º sai até 30/11 e a 2ª até 20/12. Em {{ regras.ano }}, quem ganha até R$ 5.000 não paga imposto de renda no salário.</p>
+    <ul class="meta-links">
+      <li><a href="/calculadoras/decimo-terceiro/">Calcular meu 13º líquido</a></li>
+      <li><a href="/calculadoras/salario-liquido/">Salário líquido com INSS e IR</a></li>
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if bcb %}
+  <section class="meta-card" id="dinheiro">
+    <h2><span class="ico">%</span>Fazer o dinheiro render</h2>
+    {% if bcb.poupanca.valor is not none and bcb.cdi.valor is not none %}
+    {% set poup = 10000 * ((1 + bcb.poupanca.valor / 100) ** 12 - 1) %}
+    {% set cdb = 10000 * (bcb.cdi.valor / 100) * (1 - 0.175) %}
+    <p class="meta-dica">R$ 10 mil rendem cerca de {{ poup|brl(0) }} em 12 meses na poupança e {{ cdb|brl(0) }} num CDB que paga 100% do CDI, já descontado o IR.</p>
+    {% endif %}
+    <ul class="meta-links">
+      <li><a href="/quanto-rende/">Quanto rende poupança, CDB e Tesouro</a></li>
+      <li><a href="/calculadoras/corrigir-pela-inflacao/">Corrigir um valor pela inflação</a></li>
+    </ul>
+  </section>
+  {% endif %}
+</div>
+
+<h2>Os números de hoje</h2>
 <nav class="hoje" aria-label="Valores de hoje">
   {% if comb %}
   {% for chave, rot in [("gasolina", "Gasolina"), ("etanol", "Etanol"), ("diesel_s10", "Diesel S10")] if chave in comb.brasil.produtos %}
@@ -25,48 +113,26 @@
   <a href="/combustivel/"><small>{{ rot }}</small><b>{{ d.medio|brl }}</b>{{ d.var|seta }}</a>
   {% endfor %}
   {% endif %}
-  {% if bcb and bcb.dolar %}<a href="/dolar-hoje/"><small>Dólar</small><b>{{ bcb.dolar.valor|brl(2) }}</b>{{ bcb.dolar.var|seta }}</a>{% endif %}
-  {% if bcb and bcb.euro %}<a href="/euro-hoje/"><small>Euro</small><b>{{ bcb.euro.valor|brl(2) }}</b>{{ bcb.euro.var|seta }}</a>{% endif %}
+  {% if usd %}<a href="/dolar-hoje/"><small>Dólar</small><b>{{ usd.valor|brl(2) }}</b>{{ usd.var|seta }}</a>{% endif %}
+  {% if eur %}<a href="/euro-hoje/"><small>Euro</small><b>{{ eur.valor|brl(2) }}</b>{{ eur.var|seta }}</a>{% endif %}
   {% if bcb and bcb.selic.valor is not none %}<a href="/selic-hoje/"><small>Selic</small><b>{{ bcb.selic.valor|num(2) }}%</b><span class="var">ao ano</span></a>{% endif %}
 </nav>
-<p class="meta">Combustível: média do Brasil, variação sobre a semana anterior. Dólar e euro: PTAX do Banco Central{% if bcb and bcb.dolar %} de {{ bcb.dolar.data|data_br }}{% endif %}.</p>
-
-<h2>O que você procura?</h2>
-<ul class="atalhos">
-  {% if comb %}<li><a href="/combustivel/"><span class="ico">R$/L</span><strong>Combustível</strong><span>Preço por cidade e postos</span></a></li>
-  <li><a href="/combustivel/etanol-ou-gasolina/"><span class="ico">70%</span><strong>Etanol ou gasolina</strong><span>Qual compensa no seu estado</span></a></li>{% endif %}
-  {% if fipe %}<li><a href="/tabela-fipe/"><span class="ico">FIPE</span><strong>Tabela FIPE</strong><span>Preço de carros e motos</span></a></li>{% endif %}
-  {% if moedas %}<li><a href="/moedas/"><span class="ico">US$</span><strong>Dólar e moedas</strong><span>Cotação de hoje e conversor</span></a></li>{% endif %}
-  {% if regras %}<li><a href="/calculadoras/decimo-terceiro/"><span class="ico">13º</span><strong>13º salário</strong><span>Valor líquido das parcelas</span></a></li>
-  <li><a href="/calculadoras/salario-liquido/"><span class="ico">R$</span><strong>Salário líquido</strong><span>Desconto de INSS e IR</span></a></li>{% endif %}
-  {% if regras and regras.ipva %}<li><a href="/ipva/"><span class="ico">IPVA</span><strong>IPVA {{ regras.ipva.proximo }}</strong><span>Calculadora por estado</span></a></li>{% endif %}
-  {% if bcb %}<li><a href="/quanto-rende/"><span class="ico">%</span><strong>Quanto rende</strong><span>Poupança, CDB e Tesouro</span></a></li>{% endif %}
-  {% if comb %}<li><a href="/calculadoras/custo-da-viagem/"><span class="ico">km</span><strong>Custo da viagem</strong><span>Gasto de combustível no trajeto</span></a></li>{% endif %}
-  {% if tem_energia %}<li><a href="/conta-de-luz/"><span class="ico">kWh</span><strong>Conta de luz</strong><span>Tarifa e bandeira do mês</span></a></li>{% endif %}
-  {% if bcb %}<li><a href="/calculadoras/corrigir-pela-inflacao/"><span class="ico">IPCA</span><strong>Corrigir pela inflação</strong><span>Quanto um valor antigo vale hoje</span></a></li>{% endif %}
-</ul>
+<p class="meta">Combustível: média do Brasil na pesquisa da ANP de {% if comb %}{{ comb.fim|data_br }}{% endif %}, variação sobre a semana anterior. Câmbio: PTAX do Banco Central{% if usd %} de {{ usd.data|data_br }}{% endif %}.</p>
 
 {% if fipe %}
 <h2>Tabela FIPE dos mais procurados</h2>
 {% set top = ["Onix", "HB20", "Strada", "Gol", "Polo", "Kwid", "Argo", "Mobi", "Corolla", "Compass", "T-Cross", "Creta", "Hilux", "Toro", "Tracker", "CG", "Biz"] %}
 <ul class="chips chips-claros">
-{% for nomef in top %}{% for tipo, info in fipe.items() %}{% for marca in info.marcas %}{% for f in marca.familias if f.nome|lower == nomef|lower %}<li><a href="{{ f.url }}">{{ marca.nome if tipo == "carros" else "Moto" }} {{ f.nome }}</a></li>{% endfor %}{% endfor %}{% endfor %}{% endfor %}
+{% for nomef in top %}{% for tipo, info in fipe.items() %}{% for marca in info.marcas %}{% for f in marca.familias if f.nome|lower == nomef|lower and (tipo == "carros" or nomef in ["CG", "Biz", "Fazer"]) %}<li><a href="{{ f.url }}">{{ marca.nome if tipo == "carros" else "Moto" }} {{ f.nome }}</a></li>{% endfor %}{% endfor %}{% endfor %}{% endfor %}
 </ul>
 {% endif %}
 
 {% if comb %}
-{{ m.tendencia(comb.brasil.produtos, "dos combustíveis") }}
-{% endif %}
-
-{% if bcb %}
-<h2>Juros e inflação</h2>
-<div class="indices">
-  {% if bcb.selic.valor is not none %}<a class="indice" href="/selic-hoje/"><span class="indice-nome">Selic</span><span class="indice-valor">{{ bcb.selic.valor|num(2) }}%</span><span class="meta">ao ano, meta do Copom</span></a>{% endif %}
-  {% if bcb.cdi.valor is not none %}<a class="indice" href="/cdi-hoje/"><span class="indice-nome">CDI</span><span class="indice-valor">{{ bcb.cdi.valor|num(2) }}%</span><span class="meta">ao ano</span></a>{% endif %}
-  {% if bcb.ipca12.valor is not none %}<a class="indice" href="/ipca-inflacao/"><span class="indice-nome">IPCA 12 meses</span><span class="indice-valor">{{ bcb.ipca12.valor|num(2) }}%</span><span class="meta">até {{ bcb.ipca12.data|data_br("mes") }}</span></a>{% endif %}
-  {% if bcb.poupanca.valor is not none %}<a class="indice" href="/calculadoras/rendimento/"><span class="indice-nome">Poupança</span><span class="indice-valor">{{ bcb.poupanca.valor|num(4) }}%</span><span class="meta">ao mês</span></a>{% endif %}
-  {% if usd and usd.var30 is not none %}<a class="indice" href="/dolar-hoje/"><span class="indice-nome">Dólar em 30 dias</span><span class="indice-valor">{{ "+" if usd.var30 > 0 }}{{ usd.var30|num(1) }}%</span><span class="meta">variação</span></a>{% endif %}
-  {% if eur and eur.var30 is not none %}<a class="indice" href="/euro-hoje/"><span class="indice-nome">Euro em 30 dias</span><span class="indice-valor">{{ "+" if eur.var30 > 0 }}{{ eur.var30|num(1) }}%</span><span class="meta">variação</span></a>{% endif %}
-</div>
+<h2>Combustível nas capitais</h2>
+{% set capitais = ["São Paulo", "Rio de Janeiro", "Belo Horizonte", "Curitiba", "Florianópolis", "Porto Alegre", "Brasília", "Salvador", "Recife", "Fortaleza", "Goiânia", "Manaus"] %}
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Cidade</th><th class="n">Gasolina</th><th class="n">Etanol</th><th class="some-celular">Compensa</th></tr></thead>
+  <tbody>{% for nome in capitais %}{% for c in comb.cidades if c.nome == nome and c.produtos.gasolina %}{% if loop.first %}<tr><td><a href="{{ c.url }}">{{ c.nome }}</a></td><td class="n">{{ c.produtos.gasolina.medio|brl }}</td><td class="n">{% if c.produtos.etanol %}{{ c.produtos.etanol.medio|brl }}{% else %}–{% endif %}</td><td class="some-celular">{% if c.razao %}{{ "Etanol" if c.razao <= regra else "Gasolina" }}{% else %}–{% endif %}</td></tr>{% endif %}{% endfor %}{% endfor %}</tbody>
+</table></div>
 {% endif %}
 {% endblock %}

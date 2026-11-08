@@ -17,7 +17,7 @@
 {% set top = ["Onix", "HB20", "Strada", "Gol", "Polo", "Kwid", "Argo", "Mobi", "Corolla", "Compass", "T-Cross", "Creta", "Hilux", "Toro", "Tracker", "CG", "Biz", "Fazer"] %}
 <p class="nota" style="margin-bottom:4px">Modelos mais procurados:</p>
 <ul class="chips chips-claros" aria-label="Modelos mais procurados">
-{% for nomef in top %}{% for tipo, info in fipe.items() %}{% for marca in info.marcas %}{% for f in marca.familias if f.nome|lower == nomef|lower %}<li><a href="{{ f.url }}">{{ f.nome }}</a></li>{% endfor %}{% endfor %}{% endfor %}{% endfor %}
+{% for nomef in top %}{% for tipo, info in fipe.items() %}{% for marca in info.marcas %}{% for f in marca.familias if f.nome|lower == nomef|lower and (tipo == "carros" or nomef in ["CG", "Biz", "Fazer"]) %}<li><a href="{{ f.url }}">{{ f.nome }}</a></li>{% endfor %}{% endfor %}{% endfor %}{% endfor %}
 </ul>
 <p class="nota" style="margin-bottom:4px">Marcas:</p>
 <ul class="chips chips-claros" aria-label="Marcas mais procuradas">

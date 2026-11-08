@@ -126,6 +126,65 @@
     });
   });
 
+
+  // ---- busca única da página inicial (cidades, carros, moedas, IPVA, calculadoras)
+  var geral = null;
+  function carregaGeral() {
+    if (!geral) {
+      var base = (document.querySelector('link[rel="stylesheet"][href*="/static/"]') || {}).getAttribute ? document.querySelector('link[rel="stylesheet"][href*="/static/"]').getAttribute("href").replace(/estilo\.css.*$/, "") : "/static/";
+      geral = fetch(base + "busca-geral.json").then(function (r) { return r.json(); });
+    }
+    return geral;
+  }
+  document.querySelectorAll("form.busca-geral").forEach(function (f) {
+    var campo = f.querySelector("input"), caixa = f.querySelector(".sugestoes"), msg = f.querySelector(".busca-msg");
+    var achados = [], ativo = -1;
+    campo.addEventListener("focus", carregaGeral, { once: true });
+    function fechar() { caixa.hidden = true; caixa.innerHTML = ""; ativo = -1; }
+    function procurar(q, lista) {
+      var termos = q.split(/\s+/).filter(Boolean), ini = [], resto = [];
+      for (var i = 0; i < lista.length; i++) {
+        var x = lista[i], t = x._s || (x._s = sem(x[0] + " " + x[1]));
+        if (!termos.every(function (p) { return t.indexOf(p) >= 0; })) continue;
+        (sem(x[0]).indexOf(termos[0]) === 0 ? ini : resto).push(x);
+        if (ini.length >= 8) break;
+      }
+      return ini.concat(resto).slice(0, 8);
+    }
+    function marcar(i) { caixa.querySelectorAll("a").forEach(function (a, k) { a.classList.toggle("ativo", k === i); }); ativo = i; }
+    campo.addEventListener("input", function () {
+      if (msg) msg.textContent = "";
+      var q = sem(campo.value.trim());
+      if (q.length < 2) { fechar(); return; }
+      carregaGeral().then(function (lista) {
+        if (sem(campo.value.trim()) !== q) return;
+        achados = procurar(q, lista);
+        if (!achados.length) { fechar(); return; }
+        caixa.innerHTML = achados.map(function (x) { return '<li role="option"><a href="' + x[2] + '">' + x[0] + " <small>" + x[1] + "</small></a></li>"; }).join("");
+        caixa.hidden = false; ativo = -1;
+      });
+    });
+    campo.addEventListener("keydown", function (ev) {
+      if (caixa.hidden) return;
+      var n = achados.length;
+      if (ev.key === "ArrowDown") { ev.preventDefault(); marcar((ativo + 1) % n); }
+      else if (ev.key === "ArrowUp") { ev.preventDefault(); marcar((ativo - 1 + n) % n); }
+      else if (ev.key === "Enter" && ativo >= 0) { ev.preventDefault(); location.href = achados[ativo][2]; }
+      else if (ev.key === "Escape") fechar();
+    });
+    document.addEventListener("click", function (ev) { if (!f.contains(ev.target)) fechar(); });
+    f.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      var q = sem(campo.value.trim());
+      if (!q) { campo.focus(); return; }
+      carregaGeral().then(function (lista) {
+        var r = procurar(q, lista)[0];
+        if (r) location.href = r[2];
+        else if (msg) msg.textContent = "Não encontramos \u201c" + campo.value + "\u201d. Tente o nome da cidade, do carro ou da moeda.";
+      });
+    });
+  });
+
   // ---- números em português
   window.BH = {
     cidades: cidades,

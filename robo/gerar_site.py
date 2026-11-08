@@ -705,6 +705,26 @@ def main():
 
     (SAIDA / "404.html").write_text(com_prefixo(env.get_template("404.html").render(url="/404")), encoding="utf-8")
     base = CONFIG["url_base"].rstrip("/")
+    # busca única da página inicial: cidades, carros e motos, moedas, IPVA e calculadoras
+    geral = []
+    if comb:
+        geral += [[c["nome"], f"Combustível · {c['uf']}", c["url"], "c"] for c in comb["cidades"]]
+    if fipe:
+        for tipo, info in fipe.items():
+            for marca in info["marcas"]:
+                geral += [[f"{marca['nome']} {f['nome']}", f"Tabela FIPE · {'moto' if tipo == 'motos' else 'carro'}", f["url"], "f"]
+                          for f in marca["familias"]]
+    for mo in (moedas or []):
+        geral.append([mo["nome"], "Cotação de hoje e conversor", mo["url"], "m"])
+    if regras and regras.get("ipva"):
+        geral += [[f"IPVA {UFS[u]}", f"IPVA {regras['ipva']['proximo']}", f"/ipva/{u.lower()}/", "i"] for u in regras["ipva"]["aliquotas"]]
+    geral += [[n, "Calculadora", u, "k"] for n, u in [
+        ("13º salário", "/calculadoras/decimo-terceiro/"), ("Salário líquido", "/calculadoras/salario-liquido/"),
+        ("Etanol ou gasolina", "/combustivel/etanol-ou-gasolina/"), ("Custo da viagem", "/calculadoras/custo-da-viagem/"),
+        ("Quanto rende (poupança, CDB, Tesouro)", "/quanto-rende/"), ("Corrigir pela inflação", "/calculadoras/corrigir-pela-inflacao/"),
+        ("Conta de luz", "/conta-de-luz/"), ("Selic hoje", "/selic-hoje/"), ("IPCA e inflação", "/ipca-inflacao/")]]
+    (SAIDA / "static" / "busca-geral.json").write_text(json.dumps(geral, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
     (SAIDA / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         + "".join(f"<url><loc>{base}{u}</loc><lastmod>{hoje}</lastmod><priority>{p}</priority></url>\n" for u, p in mapa)
