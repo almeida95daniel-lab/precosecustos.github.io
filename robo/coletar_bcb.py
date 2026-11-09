@@ -5,6 +5,7 @@ https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo}/dados?formato=json
 """
 import json
 import sys
+import time
 from datetime import date
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent))
@@ -24,6 +25,46 @@ SERIES = {
 }
 
 
+def _ler_json(url, tentativas=3):
+    """Baixa e lê o JSON. A API às vezes responde 200 com corpo vazio ou HTML; tenta de novo."""
+    ultimo = None
+    for i in range(tentativas):
+        try:
+            dados = json.loads(baixar(url))
+            if isinstance(dados, dict) and "erro" in str(dados).lower():
+                raise ValueError(f"resposta de erro: {str(dados)[:120]}")
+            return dados
+        except (ValueError, json.JSONDecodeError) as e:
+            ultimo = e
+            time.sleep(2 * (i + 1))
+    raise ValueError(f"JSON inválido após {tentativas} tentativas: {ultimo}")
+
+
+def _ultimos(codigo, n=20):
+    """Reserva: só os últimos pontos (consulta leve, costuma passar quando a longa falha)."""
+    url = f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo}/dados/ultimos/{n}?formato=json"
+    pontos = {}
+    for p in _ler_json(url):
+        d, m, a = p["data"].split("/")
+        v = numero(p["valor"])
+        if v is not None:
+            pontos[f"{a}-{m}-{d}"] = v
+    return pontos
+
+
+def _ptax_olinda(chave):
+    """Reserva para dólar e euro: serviço PTAX (Olinda) do próprio Banco Central."""
+    from coletar_moedas import ptax
+    return dict(ptax({"dolar": "USD", "euro": "EUR"}[chave], dias=30))
+
+
+def _completar(anteriores, novos):
+    """Junta pontos novos aos que já tínhamos (os novos prevalecem)."""
+    junto = dict(anteriores or [])
+    junto.update(novos)
+    return sorted(junto.items())
+
+
 def _baixar_serie(codigo, modo):
     base = f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo}/dados"
     tipo, valor = modo.split(":")
@@ -39,7 +80,7 @@ def _baixar_serie(codigo, modo):
             ano = fim + 1
     pontos = {}
     for url in urls:
-        for p in json.loads(baixar(url)):
+        for p in _ler_json(url):
             d, m, a = p["data"].split("/")
             v = numero(p["valor"])
             if v is not None:
@@ -59,9 +100,28 @@ def main():
             saida["series"][chave] = {"codigo": codigo, "descricao": desc, "pontos": pontos}
             print(f"[BCB] {chave}: {len(pontos)} pontos, último {pontos[-1]}")
         except Exception as e:
-            print(f"[BCB] {chave}: falhou ({e}); mantendo dado anterior")
-            if chave in anterior.get("series", {}):
-                saida["series"][chave] = anterior["series"][chave]
+            print(f"[BCB] {chave}: consulta completa falhou ({e}); tentando reservas")
+            velho = anterior.get("series", {}).get(chave, {}).get("pontos", [])
+            reservas = [("últimos pontos do SGS", lambda: _ultimos(codigo))]
+            if chave in ("dolar", "euro"):
+                reservas.append(("PTAX/Olinda", lambda: _ptax_olinda(chave)))
+            ok = False
+            for nome, func in reservas:
+                try:
+                    novos = func()
+                    if not novos:
+                        raise ValueError("vazio")
+                    pontos = _completar(velho, novos)
+                    saida["series"][chave] = {"codigo": codigo, "descricao": desc, "pontos": pontos}
+                    print(f"[BCB] {chave}: recuperado pela reserva ({nome}), último {pontos[-1]}")
+                    ok = True
+                    break
+                except Exception as e2:
+                    print(f"[BCB] {chave}: reserva {nome} falhou ({e2})")
+            if not ok:
+                print(f"::warning::[BCB] {chave}: todas as fontes falharam; mantendo dado anterior")
+                if chave in anterior.get("series", {}):
+                    saida["series"][chave] = anterior["series"][chave]
     salvar_json(destino, saida)
 
 

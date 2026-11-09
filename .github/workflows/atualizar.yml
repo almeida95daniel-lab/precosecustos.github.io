@@ -143,7 +143,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deploy1.outputs.page_url || steps.deploy2.outputs.page_url }}
     steps:
       - name: Cancelar publicação anterior travada
         env:
@@ -156,7 +156,18 @@ jobs:
           done
         continue-on-error: true
 
-      - id: deploy
+      - id: deploy1
+        uses: actions/deploy-pages@v4
+        continue-on-error: true   # o GitHub Pages às vezes trava em "syncing_files"; tenta de novo abaixo
+        with:
+          timeout: 900000
+
+      - name: Esperar antes de tentar publicar de novo
+        if: steps.deploy1.outcome == 'failure'
+        run: echo "::warning::Primeira publicação falhou (GitHub Pages travado); tentando de novo." && sleep 60
+
+      - id: deploy2
+        if: steps.deploy1.outcome == 'failure'
         uses: actions/deploy-pages@v4
         with:
           timeout: 900000
