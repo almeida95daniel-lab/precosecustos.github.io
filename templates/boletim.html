@@ -41,8 +41,6 @@ O litro da gasolina custou em média <strong>{{ g.valor|brl }}</strong> no Brasi
   <thead><tr><th>Cidade</th><th class="n">Gasolina</th><th>Variação</th></tr></thead>
   <tbody>{% for c in b.maiores_quedas %}<tr><td><a href="{{ c.url }}">{{ c.nome }}</a> <span class="meta">{{ c.uf }}</span></td><td class="n">{{ c.gasolina|brl }}</td><td>{{ c.var|seta }}</td></tr>{% endfor %}</tbody>
 </table></div>
-{% endif %}</td><td class="n">{% if a %}{{ a.var|seta }}{% endif %}</td><td>{% if q %}<a href="{{ q.url }}">{{ q.nome }}</a> <span class="meta">{{ q.uf }}</span>{% endif %}</td><td class="n">{% if q %}{{ q.var|seta }}{% endif %}</td></tr>{% endfor %}</tbody>
-</table></div>
 {% endif %}
 
 <h2>Etanol ou gasolina?</h2>
