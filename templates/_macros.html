@@ -56,11 +56,16 @@
 {% endif %}
 {% endmacro %}
 
-{% macro afiliados(titulo, itens) %}
+{% macro afiliados(titulo, itens, contexto="") %}
 {% if cfg.amazon_tag %}
+{% set extras = sazonais(contexto) if contexto else [] %}
+{% set ja = itens|map(attribute=1)|list %}
 <section class="afiliados">
   <h2>{{ titulo }}</h2>
   <ul>
+    {% for nome, busca, por_que, ml_url in extras if busca not in ja %}
+    <li><span class="selo-epoca">da época</span> <a href="https://www.amazon.com.br/s?k={{ busca|urlencode }}&tag={{ cfg.amazon_tag }}" rel="sponsored nofollow noopener" target="_blank">{{ nome }}</a>: {{ por_que }}.{% if ml_url %} <span class="meta">Ver na <a href="https://www.amazon.com.br/s?k={{ busca|urlencode }}&tag={{ cfg.amazon_tag }}" rel="sponsored nofollow noopener" target="_blank">Amazon</a> ou no <a href="{{ ml_url }}" rel="sponsored nofollow noopener" target="_blank">Mercado Livre</a></span>{% endif %}</li>
+    {% endfor %}
     {% for nome, busca, por_que in itens %}
     {% set ml = (cfg.mercadolivre_links or {}).get(busca) %}
     <li><a href="https://www.amazon.com.br/s?k={{ busca|urlencode }}&tag={{ cfg.amazon_tag }}" rel="sponsored nofollow noopener" target="_blank">{{ nome }}</a>: {{ por_que }}.{% if ml %} <span class="meta">Ver na <a href="https://www.amazon.com.br/s?k={{ busca|urlencode }}&tag={{ cfg.amazon_tag }}" rel="sponsored nofollow noopener" target="_blank">Amazon</a> ou no <a href="{{ ml }}" rel="sponsored nofollow noopener" target="_blank">Mercado Livre</a></span>{% endif %}</li>

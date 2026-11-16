@@ -23,13 +23,13 @@
   ("Tapetes para " ~ fam.nome, "tapete " ~ marca.nome ~ " " ~ fam.nome, "feitos sob medida, protegem o assoalho e ajudam na revenda"),
   ("Palhetas de limpador para " ~ fam.nome, "palheta " ~ marca.nome ~ " " ~ fam.nome, "trocar uma vez por ano evita riscos no para-brisa"),
   ("Calibrador de pneu digital", "calibrador de pneu digital", "pneu calibrado economiza até 3% de combustível")
-]) }}
+], "carro") }}
 {% else %}
 {{ mc.afiliados("Para a sua " ~ marca.nome ~ " " ~ fam.nome, [
   ("Baú para " ~ fam.nome, "bau moto " ~ fam.nome, "mais espaço e menos peso nas costas"),
   ("Capa para moto", "capa para moto impermeavel", "protege do sol e da chuva e conserva a pintura"),
   ("Capacete certificado Inmetro", "capacete inmetro", "segurança e item obrigatório")
-]) }}
+], "moto") }}
 {% endif %}
 <p><a href="{{ marca.url }}">Todos os {{ info.nome|lower }} {{ marca.nome }}</a></p>
 <p class="nota">Fonte: Tabela FIPE de {{ info.ref.mes }}. Valores de referência; não substituem a avaliação do veículo.</p>

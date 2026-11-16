@@ -25,13 +25,13 @@
   ("Tapetes para " ~ fam.nome, "tapete " ~ marca.nome ~ " " ~ fam.nome, "feitos sob medida, protegem o assoalho e ajudam na revenda"),
   ("Palhetas de limpador para " ~ fam.nome, "palheta " ~ marca.nome ~ " " ~ fam.nome, "trocar uma vez por ano evita riscos no para-brisa"),
   ("Calibrador de pneu digital", "calibrador de pneu digital", "pneu calibrado economiza até 3% de combustível")
-]) }}
+], "carro") }}
 {% else %}
 {{ mc.afiliados("Para a sua " ~ marca.nome ~ " " ~ fam.nome, [
   ("Baú para " ~ fam.nome, "bau moto " ~ fam.nome, "mais espaço e menos peso nas costas"),
   ("Capa para moto", "capa para moto impermeavel", "protege do sol e da chuva e conserva a pintura"),
   ("Capacete certificado Inmetro", "capacete inmetro", "segurança e item obrigatório")
-]) }}
+], "moto") }}
 {% endif %}
 {{ mc.faq([
   ("Quanto custa um " ~ nome ~ " na Tabela FIPE?", ("A versão mais barata sai por " ~ fa.min|brl(0) ~ " e a mais cara por " ~ fa.max|brl(0) ~ ", na tabela de " ~ info.ref.mes ~ ".") if fa.min != fa.max else ("Vale " ~ fa.min|brl(0) ~ " na tabela de " ~ info.ref.mes ~ ".")),

@@ -273,3 +273,4 @@ button:hover { opacity: .9; }
 .cp-tele { background: #2A7FC0; color: #fff; }
 .cp-copiar { background: var(--fundo); color: var(--tinta); border: 1px solid var(--linha-forte) !important; }
 @media (max-width: 480px) { .compartilhar-botoes a, .compartilhar-botoes button { flex: 1 1 auto; justify-content: center; } }
+.selo-epoca { display: inline-block; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: var(--destaque); color: #1A1D1F; border-radius: 4px; padding: 1px 6px; vertical-align: 1px; }

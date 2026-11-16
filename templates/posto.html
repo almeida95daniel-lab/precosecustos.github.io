@@ -40,7 +40,7 @@
   ("Calibrador de pneu digital", "calibrador de pneu digital", "pneu murcho aumenta o consumo; confira toda semana"),
   ("Aditivo de combustível", "aditivo combustivel", "ajuda a manter o sistema de injeção limpo"),
   ("Suporte de celular para carro", "suporte celular carro", "para usar o mapa e achar o posto mais barato com segurança")
-]) }}
+], "combustivel") }}
 <p><a href="{{ c.url_postos }}">Todos os postos de {{ c.nome }}</a> · <a href="{{ c.url }}">Preço médio em {{ c.nome }}</a></p>
 <p class="nota">Dados públicos do Levantamento de Preços de Combustíveis da ANP. {{ p.razao }}{% if p.cep %}, CEP {{ p.cep }}{% endif %}.</p>
 {% endblock %}

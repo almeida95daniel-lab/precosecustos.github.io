@@ -382,6 +382,24 @@ NOME_TIPO = {"carros": ("Carros", "carro"), "motos": ("Motos", "moto")}
 
 PROD_SLUG = {"gasolina": "gasolina", "gasolina_aditivada": "gasolina-aditivada", "etanol": "etanol", "diesel_s10": "diesel-s10",
              "diesel": "diesel-s500", "gnv": "gnv", "glp": "gas-de-cozinha"}
+
+AFILIADOS = ler_json(RAIZ / "afiliados.json") or {}
+
+
+def sazonais(contexto, hoje=None, maximo=2):
+    """Itens da época para um contexto (combustivel, carro, moto, luz, gas, viagem, dinheiro)."""
+    md = (hoje or date.today()).strftime("%m-%d")
+    ml = CONFIG.get("mercadolivre_links") or {}
+    saida = []
+    for janela in AFILIADOS.get("sazonais", []):
+        de, ate = janela["de"], janela["ate"]
+        ativa = de <= md <= ate if de <= ate else (md >= de or md <= ate)
+        if ativa and contexto in janela["contextos"]:
+            for it in janela["itens"]:
+                if contexto in it.get("contextos", janela["contextos"]) and all(it["busca"] != x[1] for x in saida):
+                    saida.append((it["nome"], it["busca"], it["por_que"], ml.get(it.get("ml", ""))))
+    return saida[:maximo]
+
 ANO_MIN_FAMILIA = 2008
 
 
@@ -605,7 +623,7 @@ def main():
                        tem_energia=bool(energia and (energia["atual"] or energia["principais"])), energia=energia, moedas=moedas, regras=regras, fipe=fipe,
                        exemplos_trabalho=exemplos_trabalho(regras) if regras else [],
                        calc_inss_teto=calc_inss(regras["inss"]["faixas"][-1][0], regras) if regras else 0,
-                       iof=IOF_CAMBIO, hoje_iso=date.today().isoformat(), PROD_SLUG=PROD_SLUG, versao=hashlib.md5(((RAIZ / "static" / "estilo.css").read_bytes() + (RAIZ / "static" / "app.js").read_bytes())).hexdigest()[:8])
+                       iof=IOF_CAMBIO, sazonais=sazonais, hoje_iso=date.today().isoformat(), PROD_SLUG=PROD_SLUG, versao=hashlib.md5(((RAIZ / "static" / "estilo.css").read_bytes() + (RAIZ / "static" / "app.js").read_bytes())).hexdigest()[:8])
     mapa = []
     prefixo = CONFIG.get("caminho_base", "").rstrip("/")
 

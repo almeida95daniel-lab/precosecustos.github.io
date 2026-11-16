@@ -42,7 +42,7 @@
   ("Do Mil ao Milhão", "do mil ao milhao livro", "renda fixa, ações e fundos sem complicação"),
   ("O Investidor Inteligente", "o investidor inteligente livro", "o livro mais citado sobre investir com segurança"),
   ("Kindle", "kindle", "leve vários livros de finanças no bolso")
-]) }}
+], "dinheiro") }}
 {{ mc.faq([
   ("Quanto rende R$ " ~ r.valor|num(0) ~ " na poupança por mês?", "Cerca de " ~ poup.ganho|brl ~ ", com o rendimento da poupança de " ~ bcb.poupanca.valor|num(4) ~ "% ao mês. A poupança não paga imposto de renda."),
   ("Qual rende mais: poupança ou CDB?", "Com a Selic acima de 8,5% ao ano, um CDB que paga 100% do CDI rende mais que a poupança mesmo depois do imposto. Na simulação de 1 ano, a melhor opção para R$ " ~ r.valor|num(0) ~ " foi " ~ (tabela[2][2]|selectattr("melhor")|first).nome ~ "."),

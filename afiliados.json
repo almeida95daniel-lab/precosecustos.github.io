@@ -1,0 +1,257 @@
+{
+  "nota": "Catálogo de indicações sazonais. O robô mostra, em cada página, até 2 itens da época (pelo dia de hoje) antes das indicações fixas. 'de' e 'ate' são MM-DD; janelas podem virar o ano (ex.: 12-01 a 03-15). 'busca' vira link da Amazon; 'ml' é opcional (link curto do Mercado Livre). Um item pode ter 'contextos' próprios para aparecer só em parte das páginas da janela.",
+  "sazonais": [
+    {
+      "nome": "Verão",
+      "de": "11-20",
+      "ate": "03-15",
+      "contextos": [
+        "luz"
+      ],
+      "itens": [
+        {
+          "nome": "Ventilador de teto",
+          "busca": "ventilador de teto",
+          "por_que": "refresca gastando uma fração do que gasta um ar-condicionado",
+          "ml": "ventilador de teto"
+        },
+        {
+          "nome": "Ar-condicionado inverter",
+          "busca": "ar condicionado inverter",
+          "por_que": "para quem usa muitas horas por dia, o inverter gasta menos energia",
+          "ml": "ar condicionado inverter"
+        }
+      ]
+    },
+    {
+      "nome": "Verão na estrada",
+      "de": "12-01",
+      "ate": "02-28",
+      "contextos": [
+        "combustivel",
+        "carro"
+      ],
+      "itens": [
+        {
+          "nome": "Película e protetor de para-brisa",
+          "busca": "protetor solar para-brisa carro",
+          "por_que": "carro menos quente liga menos o ar e gasta menos combustível"
+        },
+        {
+          "nome": "Caixa térmica para viagem",
+          "busca": "caixa termica",
+          "por_que": "leva água e lanche e evita parar em restaurante de estrada"
+        }
+      ]
+    },
+    {
+      "nome": "Férias de verão",
+      "de": "12-01",
+      "ate": "02-15",
+      "contextos": [
+        "viagem"
+      ],
+      "itens": [
+        {
+          "nome": "Mala de bordo",
+          "busca": "mala de bordo 10kg",
+          "por_que": "evita pagar bagagem despachada nas férias",
+          "ml": "mala de bordo 10kg"
+        },
+        {
+          "nome": "Guarda-sol e cadeira de praia",
+          "busca": "kit guarda sol cadeira praia",
+          "por_que": "alugar na praia todo dia sai mais caro que comprar"
+        }
+      ]
+    },
+    {
+      "nome": "Natal",
+      "de": "11-25",
+      "ate": "12-23",
+      "contextos": [
+        "dinheiro",
+        "carro",
+        "viagem"
+      ],
+      "itens": [
+        {
+          "nome": "Kindle (presente que dura)",
+          "busca": "kindle",
+          "por_que": "livros digitais costumam custar menos que os impressos",
+          "contextos": [
+            "dinheiro",
+            "viagem"
+          ]
+        },
+        {
+          "nome": "Aspirador de pó automotivo",
+          "busca": "aspirador automotivo portatil",
+          "por_que": "presente útil para quem tem carro",
+          "contextos": [
+            "carro"
+          ]
+        }
+      ]
+    },
+    {
+      "nome": "Volta às aulas",
+      "de": "01-05",
+      "ate": "02-28",
+      "contextos": [
+        "dinheiro"
+      ],
+      "itens": [
+        {
+          "nome": "Material escolar",
+          "busca": "kit material escolar",
+          "por_que": "compare o preço da lista antes de comprar na papelaria"
+        },
+        {
+          "nome": "Mochila escolar",
+          "busca": "mochila escolar",
+          "por_que": "uma boa mochila dura mais de um ano"
+        }
+      ]
+    },
+    {
+      "nome": "Começo de ano (IPVA)",
+      "de": "01-01",
+      "ate": "03-31",
+      "contextos": [
+        "carro"
+      ],
+      "itens": [
+        {
+          "nome": "Scanner OBD2 Bluetooth",
+          "busca": "scanner obd2 bluetooth",
+          "por_que": "ajuda a evitar oficina por defeito simples",
+          "ml": "scanner obd2 bluetooth"
+        }
+      ]
+    },
+    {
+      "nome": "Chuvas",
+      "de": "10-01",
+      "ate": "03-31",
+      "contextos": [
+        "carro",
+        "moto"
+      ],
+      "itens": [
+        {
+          "nome": "Palhetas de limpador",
+          "busca": "palheta limpador parabrisa",
+          "por_que": "palheta gasta risca o vidro e atrapalha a visão na chuva",
+          "contextos": [
+            "carro"
+          ]
+        },
+        {
+          "nome": "Capa de chuva para moto",
+          "busca": "capa de chuva motoqueiro",
+          "por_que": "item que se paga no primeiro temporal",
+          "contextos": [
+            "moto"
+          ]
+        }
+      ]
+    },
+    {
+      "nome": "Dia das Mães",
+      "de": "04-20",
+      "ate": "05-10",
+      "contextos": [
+        "dinheiro",
+        "luz"
+      ],
+      "itens": [
+        {
+          "nome": "Air fryer",
+          "busca": "air fryer",
+          "por_que": "presente que também economiza gás e óleo",
+          "ml": "air fryer"
+        },
+        {
+          "nome": "Kindle",
+          "busca": "kindle",
+          "por_que": "presente para quem gosta de ler"
+        }
+      ]
+    },
+    {
+      "nome": "Inverno",
+      "de": "05-15",
+      "ate": "08-31",
+      "contextos": [
+        "luz",
+        "gas"
+      ],
+      "itens": [
+        {
+          "nome": "Chuveiro com controle de temperatura",
+          "busca": "chuveiro eletronico temperatura",
+          "por_que": "ajustar a potência evita usar o chuveiro sempre no máximo"
+        },
+        {
+          "nome": "Cobertor e manta térmica",
+          "busca": "manta termica cobertor",
+          "por_que": "aquecer o corpo gasta menos que aquecer o ambiente"
+        }
+      ]
+    },
+    {
+      "nome": "Férias de julho",
+      "de": "06-20",
+      "ate": "07-31",
+      "contextos": [
+        "viagem"
+      ],
+      "itens": [
+        {
+          "nome": "Mala de bordo",
+          "busca": "mala de bordo 10kg",
+          "por_que": "evita taxa de bagagem nas férias",
+          "ml": "mala de bordo 10kg"
+        },
+        {
+          "nome": "Travesseiro de viagem",
+          "busca": "travesseiro de pescoco viagem",
+          "por_que": "viagem longa de ônibus ou avião mais confortável"
+        }
+      ]
+    },
+    {
+      "nome": "Dia dos Pais",
+      "de": "07-20",
+      "ate": "08-09",
+      "contextos": [
+        "carro",
+        "combustivel",
+        "dinheiro"
+      ],
+      "itens": [
+        {
+          "nome": "Kit de ferramentas",
+          "busca": "kit ferramentas automotivo",
+          "por_que": "presente que evita gastos com pequenos reparos",
+          "ml": "kit ferramentas automotivo",
+          "contextos": [
+            "carro",
+            "combustivel"
+          ]
+        },
+        {
+          "nome": "Câmera veicular",
+          "busca": "camera veicular dashcam",
+          "por_que": "segurança no trânsito",
+          "ml": "camera veicular dashcam",
+          "contextos": [
+            "carro",
+            "combustivel"
+          ]
+        }
+      ]
+    }
+  ]
+}
