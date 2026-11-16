@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% set b = boletins[0] %}
+{% block titulo %}Boletim semanal dos combustíveis: {{ b.titulo }} | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Toda semana, um resumo dos preços dos combustíveis no Brasil com os dados oficiais da ANP: médias, cidades e estados mais baratos, maiores altas e quedas.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), (None, "Boletim semanal")]) }}
+<h1>Boletim semanal dos combustíveis</h1>
+<p class="lead">Sai toda semana, assim que a ANP publica a pesquisa de preços. Assine pelo <a href="/feed.xml">RSS</a>.</p>
+<div class="veredito"><strong><a href="{{ b.url }}">{{ b.titulo }}</a></strong><p>Semana encerrada em {{ b.data|data_br("longa") }}.</p></div>
+<h2>Edições anteriores</h2>
+<ul class="lista-links" style="columns:1">
+  {% for x in boletins[1:] %}<li><a href="{{ x.url }}">{{ x.titulo }}</a><span class="meta">{{ x.data|data_br }}</span></li>{% endfor %}
+</ul>
+{% endblock %}

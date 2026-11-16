@@ -118,6 +118,10 @@
 </section>
 {% endif %}
 
+{% if boletim_atual %}
+<div class="veredito"><strong><a href="{{ boletim_atual.url }}">Boletim da semana: {{ boletim_atual.titulo }}</a></strong><p>Resumo dos preços da semana encerrada em {{ boletim_atual.data|data_br }}, com as cidades mais baratas e as maiores altas e quedas. <a href="/boletim/">Ver todos</a></p></div>
+{% endif %}
+
 <h2>Os números de hoje</h2>
 <nav class="hoje" aria-label="Valores de hoje">
   {% if comb %}

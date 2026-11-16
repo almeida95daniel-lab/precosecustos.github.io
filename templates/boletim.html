@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% set g = b.produtos.gasolina %}
+{% block titulo %}{{ b.titulo }} ({{ b.data|data_br }}) | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Boletim semanal dos combustíveis: gasolina a {{ g.valor|brl }} na média do Brasil{% if g.var is not none %} ({{ "+" if g.var > 0 }}{{ g.var|num(1) }}% na semana){% endif %}. Estados e cidades mais baratos, maiores altas e quedas e onde o etanol compensa.{% endblock %}
+{% block cabeca %}
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"NewsArticle","headline":{{ b.titulo|tojson }},"datePublished":"{{ b.data }}T12:00:00-03:00","dateModified":"{{ b.data }}T12:00:00-03:00","inLanguage":"pt-BR","image":["{{ cfg.url_base.rstrip('/') }}/og.png"],"author":{"@type":"Organization","name":{{ cfg.nome_site|tojson }},"url":"{{ cfg.url_base.rstrip('/') }}/"},"publisher":{"@type":"Organization","name":{{ cfg.nome_site|tojson }},"logo":{"@type":"ImageObject","url":"{{ cfg.url_base.rstrip('/') }}/apple-touch-icon.png"}},"mainEntityOfPage":"{{ cfg.url_base.rstrip('/') }}{{ b.url }}"}</script>
+{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), ("/boletim/", "Boletim semanal"), (None, b.data|data_br)]) }}
+<p class="meta">Boletim da semana encerrada em {{ b.data|data_br("longa") }} · dados da ANP</p>
+<h1>{{ b.titulo }}</h1>
+<p class="lead">
+{% set sobe = g.var is not none and g.var >= 0.2 %}{% set cai = g.var is not none and g.var <= -0.2 %}
+O litro da gasolina custou em média <strong>{{ g.valor|brl }}</strong> no Brasil na semana encerrada em {{ b.data|data_br }}{% if sobe %}, alta de {{ g.var|num(1) }}% sobre a semana anterior{% elif cai %}, queda de {{ (-g.var)|num(1) }}% sobre a semana anterior{% else %}, praticamente o mesmo valor da semana anterior{% endif %}.
+{% if g.var4 is not none %}Em quatro semanas, a variação acumulada é de {{ "+" if g.var4 > 0 }}{{ g.var4|num(1) }}%.{% endif %}
+</p>
+
+<div class="hoje">
+  {% for prod, d in b.produtos.items() %}<a href="/combustivel/"><small>{{ PRODUTOS[prod].nome }}</small><b>{{ d.valor|brl }}</b>{{ d.var|seta }}</a>{% endfor %}
+  {% if b.dolar %}<a href="/dolar-hoje/"><small>Dólar</small><b>{{ b.dolar|brl(2) }}</b>{{ b.dolar_var|seta }}</a>{% endif %}
+</div>
+
+<h2>Onde a gasolina está mais barata</h2>
+<p>Entre as {{ b.n_cidades }} cidades pesquisadas pela ANP, o menor preço médio foi em <a href="{{ b.cidades_baratas[0].url }}">{{ b.cidades_baratas[0].nome }} ({{ b.cidades_baratas[0].uf }})</a>, a {{ b.cidades_baratas[0].gasolina|brl }}. O estado com a gasolina mais barata foi {{ b.estados_baratos[0].nome }} ({{ b.estados_baratos[0].gasolina|brl }}), e o mais caro, {{ b.estados_caros[0].nome }} ({{ b.estados_caros[0].gasolina|brl }}).</p>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Cidade</th><th class="n">Gasolina</th><th>Na semana</th></tr></thead>
+  <tbody>{% for c in b.cidades_baratas %}<tr><td><a href="{{ c.url }}">{{ c.nome }}</a> <span class="meta">{{ c.uf }}</span></td><td class="n">{{ c.gasolina|brl }}</td><td>{{ c.var|seta }}</td></tr>{% endfor %}</tbody>
+</table></div>
+
+{% if b.maiores_altas %}
+<h2>Onde mais subiu na semana</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Cidade</th><th class="n">Gasolina</th><th>Variação</th></tr></thead>
+  <tbody>{% for c in b.maiores_altas %}<tr><td><a href="{{ c.url }}">{{ c.nome }}</a> <span class="meta">{{ c.uf }}</span></td><td class="n">{{ c.gasolina|brl }}</td><td>{{ c.var|seta }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% if b.maiores_quedas %}
+<h2>Onde mais caiu</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Cidade</th><th class="n">Gasolina</th><th>Variação</th></tr></thead>
+  <tbody>{% for c in b.maiores_quedas %}<tr><td><a href="{{ c.url }}">{{ c.nome }}</a> <span class="meta">{{ c.uf }}</span></td><td class="n">{{ c.gasolina|brl }}</td><td>{{ c.var|seta }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}</td><td class="n">{% if a %}{{ a.var|seta }}{% endif %}</td><td>{% if q %}<a href="{{ q.url }}">{{ q.nome }}</a> <span class="meta">{{ q.uf }}</span>{% endif %}</td><td class="n">{% if q %}{{ q.var|seta }}{% endif %}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+
+<h2>Etanol ou gasolina?</h2>
+<p>{% if b.etanol_compensa %}O etanol compensou em <strong>{{ b.etanol_compensa|length }} {{ "estado" if b.etanol_compensa|length == 1 else "estados" }}</strong>, onde custou até {{ (regra * 100)|int }}% do preço da gasolina: {% for e in b.etanol_compensa %}<a href="{{ e.url }}">{{ e.nome }}</a>{{ ", " if not loop.last }}{% endfor %}.{% else %}Nesta semana o etanol não compensou em nenhum estado pela regra dos {{ (regra * 100)|int }}%.{% endif %} <a href="/combustivel/etanol-ou-gasolina/">Faça a conta para o seu carro</a>.</p>
+
+<h2>Todos os estados</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Estado</th><th class="n">Gasolina</th><th>Na semana</th><th class="n some-celular">Etanol/gasolina</th></tr></thead>
+  <tbody>{% for e in b.estados %}<tr><td><a href="{{ e.url }}">{{ e.nome }}</a></td><td class="n">{{ e.gasolina|brl }}</td><td>{{ e.var|seta }}</td><td class="n some-celular">{% if e.razao %}{{ (e.razao * 100)|num(0) }}%{% else %}–{% endif %}</td></tr>{% endfor %}</tbody>
+</table></div>
+
+<p class="nota">Fonte: Levantamento de Preços de Combustíveis da ANP, semana encerrada em {{ b.data|data_br }}. Câmbio: PTAX do Banco Central. Boletim gerado automaticamente a partir dos dados oficiais.</p>
+<p>{% if mais_antigo %}<a href="{{ mais_antigo.url }}">← Boletim anterior ({{ mais_antigo.data|data_br }})</a>{% endif %}{% if mais_novo %} · <a href="{{ mais_novo.url }}">Boletim seguinte ({{ mais_novo.data|data_br }}) →</a>{% endif %} · <a href="/boletim/">Todos os boletins</a> · <a href="/feed.xml">RSS</a></p>
+{% endblock %}

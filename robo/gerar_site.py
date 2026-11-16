@@ -400,6 +400,77 @@ def sazonais(contexto, hoje=None, maximo=2):
                     saida.append((it["nome"], it["busca"], it["por_que"], ml.get(it.get("ml", ""))))
     return saida[:maximo]
 
+
+def montar_boletins(comb, semanas=12):
+    """Boletim semanal (um por pesquisa da ANP), refeito a partir das séries: nada a guardar entre execuções."""
+    if not comb:
+        return []
+    serie_br = comb["brasil"]["serie"]
+    datas = sorted({d for d, _ in serie_br.get("gasolina", [])})
+    usd = (ler_json(DADOS / "moedas.json") or {}).get("moedas", {}).get("USD", {}).get("pontos", [])
+
+    def em(serie, prod, d):
+        for dd, v in serie.get(prod, []):
+            if dd == d:
+                return v
+        return None
+
+    def dolar_ate(d):
+        ant = [v for dd, v in usd if dd <= d]
+        return ant[-1] if ant else None
+
+    boletins = []
+    for i in range(max(1, len(datas) - semanas), len(datas)):
+        w, p = datas[i], datas[i - 1]
+        p4 = datas[i - 4] if i >= 4 else None
+        prods = {}
+        for prod in ("gasolina", "etanol", "diesel_s10", "glp"):
+            v, a = em(serie_br, prod, w), em(serie_br, prod, p)
+            if v is None:
+                continue
+            a4 = em(serie_br, prod, p4) if p4 else None
+            prods[prod] = {"valor": v, "var": variacao(v, a), "var4": variacao(v, a4)}
+        if "gasolina" not in prods:
+            continue
+        est = []
+        for uf, e in comb["estados"].items():
+            g, ga, et = em(e["serie"], "gasolina", w), em(e["serie"], "gasolina", p), em(e["serie"], "etanol", w)
+            if g:
+                est.append({"uf": uf, "nome": e["nome"], "url": e["url"], "gasolina": g, "var": variacao(g, ga),
+                            "razao": round(et / g, 3) if et else None})
+        cid = []
+        for c in comb["cidades"]:
+            g, ga = em(c["serie"], "gasolina", w), em(c["serie"], "gasolina", p)
+            if g:
+                cid.append({"nome": c["nome"], "uf": c["uf"], "url": c["url"], "gasolina": g, "var": variacao(g, ga)})
+        est.sort(key=lambda x: x["gasolina"])
+        cid.sort(key=lambda x: x["gasolina"])
+        com_var = [c for c in cid if c["var"] is not None]
+        d_hoje, d_ant = dolar_ate(w), dolar_ate(p)
+        boletins.append({
+            "data": w, "anterior": p, "url": f"/boletim/{w}/", "produtos": prods,
+            "estados": est, "estados_baratos": est[:5], "estados_caros": est[-5:][::-1],
+            "cidades_baratas": cid[:10], "cidades_caras": cid[-5:][::-1],
+            "maiores_altas": sorted(com_var, key=lambda x: -x["var"])[:5],
+            "maiores_quedas": sorted(com_var, key=lambda x: x["var"])[:5],
+            "etanol_compensa": [e for e in est if e["razao"] and e["razao"] <= CONFIG["regra_etanol"]],
+            "n_cidades": len(cid), "dolar": d_hoje, "dolar_var": variacao(d_hoje, d_ant),
+        })
+    for b in boletins:
+        g = b["produtos"]["gasolina"]
+        v = g["var"]
+        if v is None or abs(v) < 0.05:
+            verbo = "fica estável"
+        elif abs(v) < 0.3:
+            verbo = "sobe levemente" if v > 0 else "cai levemente"
+        else:
+            verbo = "sobe" if v > 0 else "cai"
+        pct = "" if verbo == "fica estável" else f" {abs(v):.1f}%".replace(".", ",")
+        b["titulo"] = f"Gasolina {verbo}{pct} na semana e fica em R$ {g['valor']:.2f}".replace(".", ",", 1) if verbo != "fica estável" \
+            else f"Gasolina fica estável na semana, a R$ {g['valor']:.2f}".replace(".", ",")
+        b["titulo"] += f"; mais barata está em {b['cidades_baratas'][0]['nome']} ({b['cidades_baratas'][0]['uf']})" if b["cidades_baratas"] else ""
+    return boletins[::-1]
+
 ANO_MIN_FAMILIA = 2008
 
 
@@ -655,6 +726,13 @@ def main():
     bf_ini, bf_fim = date(date.today().year, 11, 1), date(date.today().year, 12, 2)
     env.globals["bf_ativa"] = bf_ini <= date.today() <= bf_fim
     env.globals["bf_data"] = date(date.today().year, 11, 30) - timedelta(days=(date(date.today().year, 11, 30).weekday() - 4) % 7)
+    boletins = montar_boletins(comb)
+    env.globals["boletim_atual"] = boletins[0] if boletins else None
+    for k, b in enumerate(boletins):
+        pagina(b["url"], "boletim.html", 0.8 if k == 0 else 0.5, b=b, mais_novo=boletins[k - 1] if k else None,
+               mais_antigo=boletins[k + 1] if k + 1 < len(boletins) else None)
+    if boletins:
+        pagina("/boletim/", "boletim_indice.html", 0.9, boletins=boletins)
     pagina("/black-friday/", "black_friday.html", 0.9 if env.globals["bf_ativa"] else 0)
     pagina("/", "inicio.html", 1.0)
     if regras and regras.get("ipva"):
@@ -768,6 +846,19 @@ def main():
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         + "".join(f"<url><loc>{base}{u}</loc><lastmod>{hoje}</lastmod><priority>{p}</priority></url>\n" for u, p in mapa)
         + "</urlset>\n", encoding="utf-8")
+    if boletins:
+        from email.utils import format_datetime
+        from html import escape as esc
+        itens = "".join(
+            f"<item><title>{esc(b['titulo'])}</title><link>{base}{b['url']}</link><guid>{base}{b['url']}</guid>"
+            f"<pubDate>{format_datetime(datetime.fromisoformat(b['data'] + 'T12:00:00-03:00'))}</pubDate>"
+            f"<description>{esc('Média do Brasil: gasolina R$ ' + format(b['produtos']['gasolina']['valor'], '.2f').replace('.', ',') + '. Veja os estados e cidades mais baratos, as maiores altas e quedas e onde o etanol compensa.')}</description></item>"
+            for b in boletins)
+        (SAIDA / "feed.xml").write_text(
+            '<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel>'
+            f"<title>{esc(CONFIG['nome_site'])}: boletim semanal dos combustíveis</title><link>{base}/boletim/</link>"
+            "<description>Resumo semanal dos preços dos combustíveis no Brasil, com dados oficiais da ANP.</description>"
+            f"<language>pt-BR</language>{itens}</channel></rss>\n", encoding="utf-8")
     (SAIDA / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n", encoding="utf-8")
     if CONFIG.get("adsense_cliente"):
         pub = CONFIG["adsense_cliente"].replace("ca-", "")
