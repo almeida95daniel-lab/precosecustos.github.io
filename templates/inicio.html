@@ -105,6 +105,19 @@
   {% endif %}
 </div>
 
+{% if cfg.amazon_tag and hoje_iso[5:] >= "11-14" and hoje_iso[5:] <= "12-02" %}
+<section class="afiliados">
+  <h2>Black Friday: ofertas que ajudam a economizar</h2>
+  <p>Separamos categorias em que o desconto vira economia o ano todo. Compare com o preço de outubro antes de comprar.</p>
+  <ul class="chips chips-claros">
+    {% for rotulo, busca in [("Todas as ofertas do dia", ""), ("Pneus", "pneu aro"), ("Acessórios para carro", "acessorios automotivos"), ("Lâmpadas LED", "lampada led"), ("Ar-condicionado inverter", "ar condicionado inverter"), ("Air fryer", "air fryer"), ("Kindle e livros", "kindle"), ("Malas de viagem", "mala de viagem")] %}
+    <li><a href="{% if busca %}https://www.amazon.com.br/s?k={{ busca|urlencode }}&tag={{ cfg.amazon_tag }}{% else %}https://www.amazon.com.br/deals?tag={{ cfg.amazon_tag }}{% endif %}" rel="sponsored nofollow noopener" target="_blank">{{ rotulo }}</a></li>
+    {% endfor %}
+  </ul>
+  <p class="nota">Como associado da Amazon, o {{ cfg.nome_site }} ganha com compras qualificadas feitas por esses links, sem custo extra para você.</p>
+</section>
+{% endif %}
+
 <h2>Os números de hoje</h2>
 <nav class="hoje" aria-label="Valores de hoje">
   {% if comb %}

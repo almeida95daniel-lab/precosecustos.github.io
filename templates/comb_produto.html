@@ -64,6 +64,15 @@
 {% endif %}
 <p><a href="{{ c.url }}">Todos os combustíveis em {{ c.nome }}</a></p>
 
+{{ m.afiliados("Para gastar menos com " ~ nome_curto, [
+  ("Scanner OBD2 Bluetooth", "scanner obd2 bluetooth", "mostra o consumo real do carro no celular e avisa defeitos antes de virarem gasto"),
+  ("Calibrador de pneu digital", "calibrador de pneu digital", "pneu calibrado economiza até 3% de combustível"),
+  ("Câmera veicular (dashcam)", "camera veicular dashcam", "ajuda em caso de batida e pode baratear a discussão com o seguro")
+]) if prod != "glp" else m.afiliados("Para o gás durar mais", [
+  ("Válvula reguladora de gás com manômetro", "regulador gas com manometro", "mostra quanto gás resta e evita trocar o botijão antes da hora"),
+  ("Panela de pressão", "panela de pressao", "cozinha em menos tempo e gasta menos gás"),
+  ("Mangueira de gás certificada", "mangueira gas inmetro", "a troca a cada 5 anos é obrigatória e evita vazamentos")
+]) }}
 {{ m.faq([
   ("Quanto está " ~ ("o " if prod in ("diesel", "diesel_s10", "gnv", "glp", "etanol") else "a ") ~ nome_curto ~ " em " ~ c.nome ~ "?", "A média da última pesquisa da ANP é " ~ d.medio|brl ~ " por " ~ info.unidade ~ ", com preços de " ~ d.minimo|brl ~ " a " ~ d.maximo|brl ~ "."),
   ("De quando são os preços?", "Da pesquisa semanal da ANP de " ~ comb.inicio|data_br ~ " a " ~ comb.fim|data_br ~ ". O site atualiza sozinho quando sai a pesquisa nova.")

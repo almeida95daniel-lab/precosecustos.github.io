@@ -605,7 +605,7 @@ def main():
                        tem_energia=bool(energia and (energia["atual"] or energia["principais"])), energia=energia, moedas=moedas, regras=regras, fipe=fipe,
                        exemplos_trabalho=exemplos_trabalho(regras) if regras else [],
                        calc_inss_teto=calc_inss(regras["inss"]["faixas"][-1][0], regras) if regras else 0,
-                       iof=IOF_CAMBIO, PROD_SLUG=PROD_SLUG, versao=hashlib.md5(((RAIZ / "static" / "estilo.css").read_bytes() + (RAIZ / "static" / "app.js").read_bytes())).hexdigest()[:8])
+                       iof=IOF_CAMBIO, hoje_iso=date.today().isoformat(), PROD_SLUG=PROD_SLUG, versao=hashlib.md5(((RAIZ / "static" / "estilo.css").read_bytes() + (RAIZ / "static" / "app.js").read_bytes())).hexdigest()[:8])
     mapa = []
     prefixo = CONFIG.get("caminho_base", "").rstrip("/")
 
