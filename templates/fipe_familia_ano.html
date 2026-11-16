@@ -19,6 +19,20 @@
   <li><strong>IPVA:</strong> sobre {{ barato.a.valor|brl(0) }}, seria cerca de {{ (barato.a.valor * 0.04)|brl(0) }} por ano com alíquota de 4% (SP) ou {{ (barato.a.valor * 0.02)|brl(0) }} com 2% (SC). Cada estado tem sua regra: <a href="/ipva/">calcule o IPVA do seu estado</a>.</li>
   {% if info.singular == "carro" %}<li><strong>Combustível:</strong> veja <a href="/combustivel/">o preço da gasolina na sua cidade</a> e <a href="/calculadoras/custo-da-viagem/">quanto custa uma viagem</a>.</li>{% endif %}
 </ul>
+
+{% if info.singular == "carro" %}
+{{ mc.afiliados("Para o seu " ~ marca.nome ~ " " ~ fam.nome, [
+  ("Tapetes para " ~ fam.nome, "tapete " ~ marca.nome ~ " " ~ fam.nome, "feitos sob medida, protegem o assoalho e ajudam na revenda"),
+  ("Palhetas de limpador para " ~ fam.nome, "palheta " ~ marca.nome ~ " " ~ fam.nome, "trocar uma vez por ano evita riscos no para-brisa"),
+  ("Calibrador de pneu digital", "calibrador de pneu digital", "pneu calibrado economiza até 3% de combustível")
+]) }}
+{% else %}
+{{ mc.afiliados("Para a sua " ~ marca.nome ~ " " ~ fam.nome, [
+  ("Baú para " ~ fam.nome, "bau moto " ~ fam.nome, "mais espaço e menos peso nas costas"),
+  ("Capa para moto", "capa para moto impermeavel", "protege do sol e da chuva e conserva a pintura"),
+  ("Capacete certificado Inmetro", "capacete inmetro", "segurança e item obrigatório")
+]) }}
+{% endif %}
 {{ mc.faq([
   ("Quanto custa um " ~ nome ~ " na Tabela FIPE?", ("A versão mais barata sai por " ~ fa.min|brl(0) ~ " e a mais cara por " ~ fa.max|brl(0) ~ ", na tabela de " ~ info.ref.mes ~ ".") if fa.min != fa.max else ("Vale " ~ fa.min|brl(0) ~ " na tabela de " ~ info.ref.mes ~ ".")),
   ("O valor da FIPE é o preço de venda?", "É uma média de mercado. Quilometragem, conservação, opcionais e a região mudam o preço do carro específico.")

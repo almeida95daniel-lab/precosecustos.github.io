@@ -17,6 +17,20 @@
 {% set a0, a5 = novos[0], novos[5] %}
 <p>Em média, um {{ nome }} {{ a5.ano }} custa {{ ((1 - (a5.min + a5.max) / (a0.min + a0.max)) * 100)|num(0) }}% menos que um {{ a0.ano }} na Tabela FIPE.</p>
 {% endif %}
+
+{% if info.singular == "carro" %}
+{{ mc.afiliados("Para o seu " ~ marca.nome ~ " " ~ fam.nome, [
+  ("Tapetes para " ~ fam.nome, "tapete " ~ marca.nome ~ " " ~ fam.nome, "feitos sob medida, protegem o assoalho e ajudam na revenda"),
+  ("Palhetas de limpador para " ~ fam.nome, "palheta " ~ marca.nome ~ " " ~ fam.nome, "trocar uma vez por ano evita riscos no para-brisa"),
+  ("Calibrador de pneu digital", "calibrador de pneu digital", "pneu calibrado economiza até 3% de combustível")
+]) }}
+{% else %}
+{{ mc.afiliados("Para a sua " ~ marca.nome ~ " " ~ fam.nome, [
+  ("Baú para " ~ fam.nome, "bau moto " ~ fam.nome, "mais espaço e menos peso nas costas"),
+  ("Capa para moto", "capa para moto impermeavel", "protege do sol e da chuva e conserva a pintura"),
+  ("Capacete certificado Inmetro", "capacete inmetro", "segurança e item obrigatório")
+]) }}
+{% endif %}
 <p><a href="{{ marca.url }}">Todos os {{ info.nome|lower }} {{ marca.nome }}</a></p>
 <p class="nota">Fonte: Tabela FIPE de {{ info.ref.mes }}. Valores de referência; não substituem a avaliação do veículo.</p>
 {% endblock %}
