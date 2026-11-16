@@ -16,9 +16,23 @@ API = "https://dadosabertos.aneel.gov.br/api/3/action"
 ADICIONAL_RESERVA = {"Verde": 0.0, "Amarela": 1.885, "Vermelha Patamar 1": 4.463, "Vermelha Patamar 2": 7.877}
 
 
+# O portal da ANEEL às vezes fica fora do ar ou recusa conexões vindas do GitHub. Antes o robô esperava
+# 120 s por conexão, 3 vezes, em cada chamada (cerca de 12 minutos por execução). Agora a conexão tem
+# 15 s, há só 2 tentativas, e se o portal não responder na primeira chamada as outras nem são tentadas.
+FORA_DO_AR = []
+
+
 def api(acao, **params):
+    if FORA_DO_AR:
+        raise RuntimeError(f"portal da ANEEL fora do ar nesta execução ({FORA_DO_AR[0]})")
     qs = "&".join(f"{k}={quote(v if isinstance(v, str) else json.dumps(v, ensure_ascii=False))}" for k, v in params.items())
-    dados = json.loads(baixar(f"{API}/{acao}?{qs}", timeout=120))
+    try:
+        bruto = baixar(f"{API}/{acao}?{qs}", tentativas=2, timeout=(15, 120))
+    except RuntimeError as e:
+        if "ConnectTimeout" in str(e) or "ConnectionError" in str(e) or "Max retries" in str(e):
+            FORA_DO_AR.append(type(e).__name__)
+        raise
+    dados = json.loads(bruto)
     if not dados.get("success"):
         raise RuntimeError(dados.get("error"))
     return dados["result"]
@@ -93,6 +107,16 @@ def coletar_tarifas():
     return sorted(por_dist.values(), key=lambda d: d["distribuidora"])
 
 
+def com_anunciadas(meses):
+    """Acrescenta as bandeiras anunciadas (registro manual) que ainda não estão nos dados abertos."""
+    oficiais = {m["mes"] for m in meses if not m.get("anunciada")}
+    meses = [m for m in meses if not m.get("anunciada")]
+    for mes, b in (ler_json(DADOS / "bandeiras_anunciadas.json") or {}).get("meses", {}).items():
+        if mes not in oficiais and bandeira_canonica(b):
+            meses.append({"mes": mes, "bandeira": bandeira_canonica(b), "anunciada": True})
+    return sorted({m["mes"]: m for m in meses}.values(), key=lambda m: m["mes"])
+
+
 def coletar_bandeiras():
     todos = recursos("bandeira tarifaria")
     acion = [r for r in todos if "ACIONAMENTO" in normalizar(r[1])]
@@ -109,11 +133,7 @@ def coletar_bandeiras():
     # Os dados abertos da ANEEL às vezes levam semanas para incluir o mês novo. A bandeira é anunciada
     # na última sexta do mês anterior; quando o dado oficial atrasa, vale o registro manual conferido
     # no anúncio da ANEEL (dados/bandeiras_anunciadas.json), até o dado aberto chegar.
-    oficiais = {m["mes"] for m in meses}
-    for mes, b in (ler_json(DADOS / "bandeiras_anunciadas.json") or {}).get("meses", {}).items():
-        if mes not in oficiais and bandeira_canonica(b):
-            meses.append({"mes": mes, "bandeira": bandeira_canonica(b), "anunciada": True})
-    meses = sorted({m["mes"]: m for m in meses}.values(), key=lambda m: m["mes"])
+    meses = com_anunciadas(meses)
     valores = {}
     if adic:
         regs = api("datastore_search", resource_id=adic[0][2], limit="32000")["records"]
@@ -145,14 +165,20 @@ def main():
             saida.update({"bandeiras": meses, "adicional_100kwh": valores, "adicional_oficial": oficial})
             print(f"[ANEEL] bandeira {meses[-1]}")
     except Exception as e:
-        print(f"[ANEEL] bandeiras indisponíveis: {e}")
+        print(f"::warning::[ANEEL] bandeiras indisponíveis: {e}")
+        # Mesmo com o portal fora do ar, a bandeira anunciada (registro manual) entra no site.
+        if saida.get("bandeiras"):
+            meses = com_anunciadas(saida["bandeiras"])[-24:]
+            if meses != saida["bandeiras"]:
+                saida["bandeiras"] = meses
+                print(f"[ANEEL] bandeira pelo anúncio registrado: {meses[-1]}")
     try:
         tarifas = coletar_tarifas()
         if tarifas:
             saida["tarifas"] = tarifas
             print(f"[ANEEL] tarifas de {len(tarifas)} distribuidoras")
     except Exception as e:
-        print(f"[ANEEL] tarifas indisponíveis: {e}")
+        print(f"::warning::[ANEEL] tarifas indisponíveis (mantidas as da última coleta): {e}")
     if saida:
         salvar_json(destino, saida)
 

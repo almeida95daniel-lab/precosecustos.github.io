@@ -58,8 +58,8 @@
 
 {% macro afiliados(titulo, itens, contexto="") %}
 {% if cfg.amazon_tag %}
-{% set extras = sazonais(contexto) if contexto else [] %}
 {% set ja = itens|map(attribute=1)|list %}
+{% set extras = sazonais(contexto, evitar=ja) if contexto else [] %}
 <section class="afiliados">
   <h2>{{ titulo }}</h2>
   <ul>

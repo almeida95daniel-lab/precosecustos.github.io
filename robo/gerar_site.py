@@ -232,7 +232,8 @@ def montar_combustiveis():
             c["pos_estado"], c["total_estado"] = i, len(com_g)
 
     brasil = {"produtos": atual.get(("brasil", "", ""), {}), "serie": series[("brasil", "", "")]}
-    proxima = (date.fromisoformat(fim) + timedelta(days=9)).isoformat()
+    # a ANP divulga na sexta-feira a pesquisa que vai de domingo a sábado: a próxima sai 6 dias depois do fim desta
+    proxima = (date.fromisoformat(fim) + timedelta(days=6)).isoformat()
     return {"inicio": ultima["semana_inicio"], "fim": fim, "anterior": anterior, "semanas": semanas, "proxima": proxima,
             "cidades": cidades, "estados": estados, "brasil": brasil, "total_postos": len(por_url)}
 
@@ -386,8 +387,9 @@ PROD_SLUG = {"gasolina": "gasolina", "gasolina_aditivada": "gasolina-aditivada",
 AFILIADOS = ler_json(RAIZ / "afiliados.json") or {}
 
 
-def sazonais(contexto, hoje=None, maximo=2):
-    """Itens da época para um contexto (combustivel, carro, moto, luz, gas, viagem, dinheiro)."""
+def sazonais(contexto, hoje=None, maximo=2, evitar=()):
+    """Itens da época para um contexto (combustivel, carro, moto, luz, gas, viagem, dinheiro).
+    'evitar' são as buscas das indicações fixas da página: não ocupam vaga da época."""
     md = (hoje or date.today()).strftime("%m-%d")
     ml = CONFIG.get("mercadolivre_links") or {}
     saida = []
@@ -396,7 +398,7 @@ def sazonais(contexto, hoje=None, maximo=2):
         ativa = de <= md <= ate if de <= ate else (md >= de or md <= ate)
         if ativa and contexto in janela["contextos"]:
             for it in janela["itens"]:
-                if contexto in it.get("contextos", janela["contextos"]) and all(it["busca"] != x[1] for x in saida):
+                if contexto in it.get("contextos", janela["contextos"]) and it["busca"] not in evitar and all(it["busca"] != x[1] for x in saida):
                     saida.append((it["nome"], it["busca"], it["por_que"], ml.get(it.get("ml", ""))))
     return saida[:maximo]
 

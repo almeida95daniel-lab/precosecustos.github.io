@@ -2,6 +2,92 @@
   "nota": "Catálogo de indicações sazonais. O robô mostra, em cada página, até 2 itens da época (pelo dia de hoje) antes das indicações fixas. 'de' e 'ate' são MM-DD; janelas podem virar o ano (ex.: 12-01 a 03-15). 'busca' vira link da Amazon; 'ml' é opcional (link curto do Mercado Livre). Um item pode ter 'contextos' próprios para aparecer só em parte das páginas da janela.",
   "sazonais": [
     {
+      "nome": "Black Friday",
+      "de": "11-10",
+      "ate": "12-01",
+      "contextos": [
+        "combustivel",
+        "carro",
+        "luz",
+        "gas",
+        "viagem",
+        "dinheiro"
+      ],
+      "itens": [
+        {
+          "nome": "Kit de lavagem automotiva",
+          "busca": "kit lavagem automotiva",
+          "por_que": "lavar o carro em casa sai mais barato que o lava-rápido",
+          "contextos": [
+            "combustivel",
+            "carro"
+          ]
+        },
+        {
+          "nome": "Filtro de linha com interruptor",
+          "busca": "filtro de linha com interruptor individual",
+          "por_que": "desliga de uma vez os aparelhos que ficam em espera gastando energia",
+          "contextos": [
+            "luz"
+          ]
+        },
+        {
+          "nome": "Air fryer",
+          "busca": "air fryer",
+          "por_que": "para porções pequenas, assa sem acender o forno a gás",
+          "ml": "air fryer",
+          "contextos": [
+            "gas"
+          ]
+        },
+        {
+          "nome": "Balança de bagagem digital",
+          "busca": "balanca digital de bagagem",
+          "por_que": "pesar a mala em casa evita pagar excesso de bagagem",
+          "contextos": [
+            "viagem"
+          ]
+        },
+        {
+          "nome": "Livro de finanças pessoais",
+          "busca": "livro educacao financeira",
+          "por_que": "ajuda a montar um orçamento e sair das dívidas",
+          "contextos": [
+            "dinheiro"
+          ]
+        }
+      ]
+    },
+    {
+      "nome": "Viagens de fim de ano",
+      "de": "12-02",
+      "ate": "01-10",
+      "contextos": [
+        "combustivel",
+        "carro",
+        "viagem"
+      ],
+      "itens": [
+        {
+          "nome": "Cabo de chupeta para bateria",
+          "busca": "cabo chupeta bateria carro",
+          "por_que": "evita pagar guincho se a bateria arriar na estrada",
+          "contextos": [
+            "combustivel",
+            "carro"
+          ]
+        },
+        {
+          "nome": "Garrafa térmica",
+          "busca": "garrafa termica inox",
+          "por_que": "evita comprar água e café caros na estrada e no aeroporto",
+          "contextos": [
+            "viagem"
+          ]
+        }
+      ]
+    },
+    {
       "nome": "Verão",
       "de": "11-20",
       "ate": "03-15",
@@ -250,6 +336,21 @@
             "carro",
             "combustivel"
           ]
+        }
+      ]
+    },
+    {
+      "nome": "Planejar o ano novo",
+      "de": "12-02",
+      "ate": "01-31",
+      "contextos": [
+        "dinheiro"
+      ],
+      "itens": [
+        {
+          "nome": "Caderno de controle de gastos",
+          "busca": "caderno controle de gastos",
+          "por_que": "anotar os gastos ajuda a decidir o que fazer com o 13º"
         }
       ]
     }
