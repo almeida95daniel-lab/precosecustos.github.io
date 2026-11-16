@@ -63,7 +63,15 @@
     <li><a href="{% if busca %}https://www.amazon.com.br/s?k={{ busca|urlencode }}&tag={{ cfg.amazon_tag }}{% else %}https://www.amazon.com.br/deals?tag={{ cfg.amazon_tag }}{% endif %}" rel="sponsored nofollow noopener" target="_blank">{{ rotulo }}</a></li>
     {% endfor %}
   </ul>
-  <p class="nota">Como associado da Amazon, o {{ cfg.nome_site }} ganha com compras qualificadas feitas por esses links, sem custo extra para você.</p>
+  {% if cfg.mercadolivre_links %}
+  <h3>No Mercado Livre</h3>
+  <ul class="chips chips-claros">
+    {% for rotulo, busca in [("Ar-condicionado inverter", "ar condicionado inverter"), ("Lâmpadas LED", "lampada led"), ("Pneus", "pneu aro"), ("Air fryer", "air fryer"), ("Ventilador de teto", "ventilador de teto"), ("Tomada inteligente com medidor", "tomada inteligente medidor consumo")] if cfg.mercadolivre_links.get(busca) %}
+    <li><a href="{{ cfg.mercadolivre_links[busca] }}" rel="sponsored nofollow noopener" target="_blank">{{ rotulo }}</a></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <p class="nota">Como associado da Amazon e do Mercado Livre, o {{ cfg.nome_site }} ganha com compras qualificadas feitas por esses links, sem custo extra para você.</p>
 </section>
 {% endif %}
 
