@@ -274,3 +274,50 @@ button:hover { opacity: .9; }
 .cp-copiar { background: var(--fundo); color: var(--tinta); border: 1px solid var(--linha-forte) !important; }
 @media (max-width: 480px) { .compartilhar-botoes a, .compartilhar-botoes button { flex: 1 1 auto; justify-content: center; } }
 .selo-epoca { display: inline-block; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: var(--destaque); color: #1A1D1F; border-radius: 4px; padding: 1px 6px; vertical-align: 1px; }
+
+/* Black Friday: banner da home e guia */
+.bf-banner { display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0; padding: 1rem 1.25rem;
+  background: var(--superficie); border: 1px solid var(--linha); border-left: 4px solid var(--tinta);
+  border-radius: var(--raio); color: var(--tinta); text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+.bf-banner:hover { border-color: var(--linha-forte); border-left-color: var(--tinta); box-shadow: 0 2px 10px rgb(0 0 0 / .06); }
+.bf-banner strong { display: block; font: 600 1.2rem/1.25 var(--cond); margin: .1rem 0 .2rem; }
+.bf-texto { flex: 1; min-width: 0; }
+.bf-sub { display: block; color: var(--tinta-2); font-size: .94rem; line-height: 1.45; }
+.bf-seta { font-size: 1.4rem; color: var(--tinta-3); }
+.bf-data { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 3.6rem; height: 3.8rem; border-radius: 6px; background: var(--placa); color: var(--placa-rotulo);
+  font: 600 .72rem/1 var(--texto); text-transform: uppercase; letter-spacing: .08em; }
+.bf-data b { font: 700 1.75rem/1 var(--cond); color: var(--placa-tinta); letter-spacing: 0; margin-bottom: .15rem; }
+.bf-data-grande { width: 4.6rem; height: 5rem; }
+.bf-data-grande b { font-size: 2.4rem; }
+.bf-chapeu { display: block; margin: 0; font: 600 .78rem/1.3 var(--texto); text-transform: uppercase; letter-spacing: .07em; color: var(--tinta-3); }
+.bf-topo { display: flex; gap: 1.25rem; align-items: flex-start; margin: .5rem 0 1.25rem; }
+.bf-topo h1 { margin: .25rem 0 .5rem; }
+.bf-topo .lead { margin: 0; }
+.bf-confianca { margin: 0 0 2rem; padding: 1rem 1.25rem; background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); font-size: .95rem; color: var(--tinta-2); }
+.bf-confianca strong { color: var(--tinta); }
+.bf-confianca p { margin: .3rem 0 0; }
+.bf-check { list-style: none; counter-reset: bf; padding: 0; margin: 0 0 2rem; display: grid; gap: .6rem; }
+.bf-check li { counter-increment: bf; position: relative; padding: .8rem 1rem .8rem 3.2rem; background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); }
+.bf-check li::before { content: counter(bf); position: absolute; left: 1rem; top: .8rem; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  background: var(--tinta); color: var(--superficie); font: 700 .9rem/1.6rem var(--texto); text-align: center; }
+.bf-calcs { display: grid; gap: 1rem; }
+@media (min-width: 900px) { .bf-calcs { grid-template-columns: 1fr 1fr; } .bf-calcs .campos { grid-template-columns: 1fr 1fr; } }
+.bf-ofertas { display: grid; gap: .9rem; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); margin: 1rem 0; }
+.bf-oferta { display: flex; flex-direction: column; padding: 1rem; background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); }
+.bf-oferta h3 { margin: .3rem 0 .35rem; font-size: 1.1rem; }
+.bf-oferta p { margin: 0 0 .9rem; color: var(--tinta-2); font-size: .94rem; line-height: 1.45; flex: 1; }
+.bf-cat { align-self: flex-start; font: 600 .72rem/1 var(--texto); text-transform: uppercase; letter-spacing: .07em; color: var(--serie); }
+.bf-botoes { display: grid; gap: .45rem; }
+.bf-btn { display: block; text-align: center; padding: .55rem .75rem; border-radius: 6px; background: var(--tinta); color: var(--superficie);
+  font-weight: 600; font-size: .92rem; text-decoration: none; }
+.bf-btn:hover { opacity: .88; }
+.bf-btn-2 { background: transparent; color: var(--tinta); border: 1px solid var(--linha-forte); }
+.bf-btn-2:hover { background: var(--fundo); opacity: 1; }
+@media (max-width: 560px) {
+  .bf-banner { padding: .9rem; gap: .8rem; }
+  .bf-seta, .bf-sub { display: none; }
+  .bf-topo { gap: .9rem; }
+  .bf-data-grande { width: 3.8rem; height: 4.2rem; }
+  .bf-data-grande b { font-size: 1.9rem; }
+}

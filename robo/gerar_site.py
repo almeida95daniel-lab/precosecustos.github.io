@@ -471,6 +471,16 @@ def montar_boletins(comb, semanas=12):
         b["titulo"] += f"; mais barata está em {b['cidades_baratas'][0]['nome']} ({b['cidades_baratas'][0]['uf']})" if b["cidades_baratas"] else ""
     return boletins[::-1]
 
+BF_OFERTAS = [
+    {"cat": "Energia", "nome": "Ar-condicionado inverter", "busca": "ar condicionado inverter", "porque": "Gasta menos energia que o convencional para quem usa várias horas por dia."},
+    {"cat": "Energia", "nome": "Lâmpadas LED", "busca": "lampada led", "porque": "Consomem até 85% menos que as incandescentes e duram anos."},
+    {"cat": "Energia", "nome": "Ventilador de teto", "busca": "ventilador de teto", "porque": "Refresca o ambiente gastando uma fração do ar-condicionado."},
+    {"cat": "Carro", "nome": "Pneus", "busca": "pneu aro", "porque": "Pneu bom e calibrado reduz o consumo de combustível."},
+    {"cat": "Carro", "nome": "Calibrador de pneu digital", "busca": "calibrador de pneu digital", "porque": "Calibrar toda semana economiza até 3% de combustível."},
+    {"cat": "Cozinha", "nome": "Air fryer", "busca": "air fryer", "porque": "Prepara refeições rápidas sem usar o forno a gás."},
+    {"cat": "Leitura", "nome": "Kindle", "busca": "kindle", "porque": "Livros digitais costumam custar menos que os impressos."},
+    {"cat": "Viagem", "nome": "Mala de bordo", "busca": "mala de bordo 10kg", "porque": "Evita pagar a taxa de bagagem despachada."},
+]
 ANO_MIN_FAMILIA = 2008
 
 
@@ -694,7 +704,7 @@ def main():
                        tem_energia=bool(energia and (energia["atual"] or energia["principais"])), energia=energia, moedas=moedas, regras=regras, fipe=fipe,
                        exemplos_trabalho=exemplos_trabalho(regras) if regras else [],
                        calc_inss_teto=calc_inss(regras["inss"]["faixas"][-1][0], regras) if regras else 0,
-                       iof=IOF_CAMBIO, sazonais=sazonais, hoje_iso=date.today().isoformat(), PROD_SLUG=PROD_SLUG, versao=hashlib.md5(((RAIZ / "static" / "estilo.css").read_bytes() + (RAIZ / "static" / "app.js").read_bytes())).hexdigest()[:8])
+                       iof=IOF_CAMBIO, bf_ofertas=BF_OFERTAS, sazonais=sazonais, hoje_iso=date.today().isoformat(), PROD_SLUG=PROD_SLUG, versao=hashlib.md5(((RAIZ / "static" / "estilo.css").read_bytes() + (RAIZ / "static" / "app.js").read_bytes())).hexdigest()[:8])
     mapa = []
     prefixo = CONFIG.get("caminho_base", "").rstrip("/")
 
@@ -733,6 +743,7 @@ def main():
                mais_antigo=boletins[k + 1] if k + 1 < len(boletins) else None)
     if boletins:
         pagina("/boletim/", "boletim_indice.html", 0.9, boletins=boletins)
+    env.globals["bf_dias"] = (env.globals["bf_data"] - date.today()).days
     pagina("/black-friday/", "black_friday.html", 0.9 if env.globals["bf_ativa"] else 0)
     pagina("/", "inicio.html", 1.0)
     if regras and regras.get("ipva"):

@@ -105,17 +105,16 @@
   {% endif %}
 </div>
 
-{% if cfg.amazon_tag and bf_ativa %}
-<section class="afiliados">
-  <h2>Black Friday: ofertas que ajudam a economizar</h2>
-  <p>Separamos categorias em que o desconto vira economia o ano todo. Antes de comprar, veja <a href="/black-friday/">como saber se o desconto é real e quanto cada troca economiza</a>.</p>
-  <ul class="chips chips-claros">
-    {% for rotulo, busca in [("Todas as ofertas do dia", ""), ("Pneus", "pneu aro"), ("Acessórios para carro", "acessorios automotivos"), ("Lâmpadas LED", "lampada led"), ("Ar-condicionado inverter", "ar condicionado inverter"), ("Air fryer", "air fryer"), ("Kindle e livros", "kindle"), ("Malas de viagem", "mala de viagem")] %}
-    <li><a href="{% if busca %}https://www.amazon.com.br/s?k={{ busca|urlencode }}&tag={{ cfg.amazon_tag }}{% else %}https://www.amazon.com.br/deals?tag={{ cfg.amazon_tag }}{% endif %}" rel="sponsored nofollow noopener" target="_blank">{{ rotulo }}</a></li>
-    {% endfor %}
-  </ul>
-  <p class="nota">Como associado da Amazon, o {{ cfg.nome_site }} ganha com compras qualificadas feitas por esses links, sem custo extra para você.</p>
-</section>
+{% if bf_ativa %}
+<a class="bf-banner" href="/black-friday/">
+  <span class="bf-data"><b>{{ bf_data.day }}</b>nov</span>
+  <span class="bf-texto">
+    <span class="bf-chapeu">Guia Black Friday {{ bf_data.year }}{% if bf_dias > 1 %} · faltam {{ bf_dias }} dias{% elif bf_dias == 1 %} · é amanhã{% elif bf_dias == 0 %} · é hoje{% endif %}</span>
+    <strong>Como saber se o desconto é real e o que vale a pena comprar</strong>
+    <span class="bf-sub">Checklist contra a "metade do dobro" e calculadoras de quanto um ar inverter ou lâmpadas LED economizam na conta de luz.</span>
+  </span>
+  <span class="bf-seta" aria-hidden="true">→</span>
+</a>
 {% endif %}
 
 {% if boletim_atual %}
