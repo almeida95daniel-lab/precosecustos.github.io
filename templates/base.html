@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+{% block robots %}{% endblock %}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block titulo %}{{ cfg.nome_site }}{% endblock %}</title>
 <meta name="description" content="{% block descricao %}{{ cfg.descricao }}{% endblock %}">
@@ -55,6 +56,17 @@
 </header>
 <main class="miolo">
 {% block conteudo %}{% endblock %}
+{% if url != "/" %}
+{% set link = cfg.url_base.rstrip("/") ~ url %}
+<aside class="compartilhar" aria-label="Compartilhar esta página">
+  <p><strong>Ajude alguém a economizar:</strong> mande esta página.</p>
+  <div class="compartilhar-botoes">
+    <a class="cp-whats" href="https://wa.me/?text={{ (self.titulo()|striptags|replace(' | ' ~ cfg.nome_site, '') ~ ' ' ~ link)|urlencode }}" target="_blank" rel="noopener">WhatsApp</a>
+    <a class="cp-tele" href="https://t.me/share/url?url={{ link|urlencode }}&amp;text={{ (self.titulo()|striptags|replace(' | ' ~ cfg.nome_site, ''))|urlencode }}" target="_blank" rel="noopener">Telegram</a>
+    <button type="button" class="cp-copiar" data-link="{{ link }}">Copiar link</button>
+  </div>
+</aside>
+{% endif %}
 </main>
 <footer class="rodape">
   <div class="rodape-in">

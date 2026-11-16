@@ -94,7 +94,7 @@ jobs:
       - name: Impressão digital do conteúdo (dados + código do site)
         id: hash
         run: |
-          echo "site=$(git rev-parse HEAD:dados HEAD:templates HEAD:static HEAD:robo HEAD:raiz HEAD:config.json HEAD:regras.json | sha1sum | cut -c1-16)" >> $GITHUB_OUTPUT
+          echo "site=$( (git rev-parse HEAD:dados HEAD:templates HEAD:static HEAD:robo HEAD:raiz HEAD:config.json HEAD:regras.json; TZ=America/Sao_Paulo date +%F) | sha1sum | cut -c1-16)" >> $GITHUB_OUTPUT
           echo "busca=$(git rev-parse HEAD:dados/anp HEAD:dados/fipe | sha1sum | cut -c1-16)" >> $GITHUB_OUTPUT
 
       - name: Este conteúdo já está no ar?

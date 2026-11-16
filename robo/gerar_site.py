@@ -620,7 +620,8 @@ def main():
         destino = SAIDA / url.strip("/") / "index.html" if url != "/" else SAIDA / "index.html"
         destino.parent.mkdir(parents=True, exist_ok=True)
         destino.write_text(com_prefixo(env.get_template(modelo).render(url=url, **ctx)), encoding="utf-8")
-        mapa.append((url, prioridade))
+        if prioridade:
+            mapa.append((url, prioridade))
 
     # Lista leve de cidades (busca e calculadoras)
     cidades_js = []
@@ -632,6 +633,11 @@ def main():
     (SAIDA / "static" / "cidades.json").write_text(json.dumps(cidades_js, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     env.globals["rendes"] = []
 
+    # Black Friday: no ar de 1º/11 a 2/12; depois vira um aviso "acabou" fora do sitemap e com noindex
+    bf_ini, bf_fim = date(date.today().year, 11, 1), date(date.today().year, 12, 2)
+    env.globals["bf_ativa"] = bf_ini <= date.today() <= bf_fim
+    env.globals["bf_data"] = date(date.today().year, 11, 30) - timedelta(days=(date(date.today().year, 11, 30).weekday() - 4) % 7)
+    pagina("/black-friday/", "black_friday.html", 0.9 if env.globals["bf_ativa"] else 0)
     pagina("/", "inicio.html", 1.0)
     if regras and regras.get("ipva"):
         pagina("/ipva/", "ipva.html", 0.9, uf=None)

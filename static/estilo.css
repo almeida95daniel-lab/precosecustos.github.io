@@ -263,3 +263,13 @@ button:hover { opacity: .9; }
 .meta-links .meta { display: block; font-size: .84rem; }
 @media (max-width: 900px) { .metas { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 600px) { .metas { grid-template-columns: 1fr; gap: 10px; } }
+
+/* ---------- compartilhar */
+.compartilhar { margin: 44px 0 0; padding: 16px; background: var(--superficie); border: 1px solid var(--linha); border-radius: 10px; max-width: 760px; }
+.compartilhar p { margin: 0 0 10px; }
+.compartilhar-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.compartilhar-botoes a, .compartilhar-botoes button { display: inline-flex; align-items: center; min-height: 42px; padding: 8px 16px; border-radius: 999px; font-weight: 600; text-decoration: none; font-size: .95rem; border: 0; cursor: pointer; }
+.cp-whats { background: #1F8F4E; color: #fff; }
+.cp-tele { background: #2A7FC0; color: #fff; }
+.cp-copiar { background: var(--fundo); color: var(--tinta); border: 1px solid var(--linha-forte) !important; }
+@media (max-width: 480px) { .compartilhar-botoes a, .compartilhar-botoes button { flex: 1 1 auto; justify-content: center; } }

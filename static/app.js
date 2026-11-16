@@ -185,6 +185,24 @@
     });
   });
 
+
+  // ---- compartilhar: no celular abre a folha de compartilhamento do sistema; senão copia o link
+  document.querySelectorAll(".cp-copiar").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var link = b.getAttribute("data-link");
+      if (navigator.share) { navigator.share({ title: document.title, url: link }).catch(function () {}); return; }
+      (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () {
+        b.textContent = "Link copiado!"; setTimeout(function () { b.textContent = "Copiar link"; }, 2000);
+      }).catch(function () { window.prompt("Copie o link:", link); });
+    });
+  });
+  document.querySelectorAll(".compartilhar a").forEach(function (a) {
+    a.addEventListener("click", function () { if (window.gtag) gtag("event", "share", { method: a.textContent.trim(), content_type: "pagina" }); });
+  });
+  document.querySelectorAll('a[rel~="sponsored"]').forEach(function (a) {
+    a.addEventListener("click", function () { if (window.gtag) gtag("event", "clique_afiliado", { link_text: a.textContent.trim() }); });
+  });
+
   // ---- números em português
   window.BH = {
     cidades: cidades,

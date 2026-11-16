@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mc %}
+{% set ano_bf = bf_data.year %}
+{% block robots %}{% if not bf_ativa %}<meta name="robots" content="noindex, follow">{% endif %}{% endblock %}
+{% block titulo %}{% if bf_ativa %}Black Friday {{ ano_bf }}: como saber se o desconto é real e o que compensa comprar{% else %}A Black Friday {{ ano_bf }} acabou{% endif %} | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}Black Friday em {{ bf_data|data_br }}: como fugir da "metade do dobro", o que costuma valer a pena e quanto um ar-condicionado inverter ou lâmpadas LED economizam na sua conta de luz.{% endblock %}
+{% block conteudo %}
+{{ mc.trilha([("/", "Início"), (None, "Black Friday " ~ ano_bf)]) }}
+{% if not bf_ativa %}
+<h1>A Black Friday {{ ano_bf }} acabou</h1>
+<p class="lead">As ofertas foram encerradas. Para continuar economizando, veja <a href="/">o que você quer economizar hoje</a>.</p>
+{% else %}
+{% set tarifa = ((energia.media or 0.75) * (1 + (energia.impostos or 25) / 100)) if energia else 0.95 %}
+<h1>Black Friday {{ ano_bf }}: compre o que economiza de verdade</h1>
+<p class="lead">A data oficial é {{ bf_data|data_br("longa") }}, e a Cyber Monday vem na segunda seguinte. Antes de comprar, confira se o desconto é real e quanto a compra devolve no seu bolso.</p>
+
+<h2>Como saber se o desconto é real</h2>
+<ol>
+  <li><strong>Veja o histórico de preço.</strong> Comparadores como Zoom e Buscapé mostram quanto o produto custou nos últimos meses. Se o preço de hoje não está abaixo do menor preço recente, não é oferta.</li>
+  <li><strong>Desconfie da "metade do dobro".</strong> Algumas lojas sobem o preço em outubro para anunciar um desconto maior em novembro.</li>
+  <li><strong>Compare o preço final.</strong> Some frete e prazo de entrega. Um desconto pequeno com frete grátis pode sair mais barato.</li>
+  <li><strong>Confira a loja.</strong> CNPJ, canais de atendimento e reclamações no consumidor.gov.br e no Procon.</li>
+  <li><strong>Você tem 7 dias para desistir</strong> de compras feitas pela internet, pelo Código de Defesa do Consumidor.</li>
+</ol>
+
+<h2>O que se paga com a economia</h2>
+<p>Algumas compras devolvem o dinheiro aos poucos na conta de luz. Faça a conta com a tarifa média do Brasil hoje, de cerca de {{ tarifa|brl(2) }} por kWh com impostos.</p>
+
+<section class="calc" aria-labelledby="c-ar">
+  <h3 id="c-ar" style="margin-top:0">Ar-condicionado inverter no lugar do convencional</h3>
+  <div class="campos">
+    <div class="campo"><label for="ar-h">Horas ligado por dia</label><input id="ar-h" type="number" min="0" max="24" value="8" inputmode="decimal"></div>
+    <div class="campo"><label for="ar-w">Potência do aparelho atual (watts)</label><input id="ar-w" type="number" min="0" value="1100" inputmode="decimal"><p class="ajuda">Um split de 12.000 BTUs consome perto de 1.000 a 1.200 W.</p></div>
+    <div class="campo"><label for="ar-e">Economia do inverter (%)</label><input id="ar-e" type="number" min="0" max="90" value="30" inputmode="decimal"><p class="ajuda">Estudos medem de 12% a 40%; fabricantes prometem até 60% ou mais.</p></div>
+    <div class="campo"><label for="ar-t">Tarifa com impostos (R$/kWh)</label><input id="ar-t" type="number" min="0" step="0.01" value="{{ tarifa|round(2) }}" inputmode="decimal"></div>
+  </div>
+  <div class="resultado" aria-live="polite"><p class="nota" style="margin:0">Economia estimada</p><p class="resultado-grande" id="ar-r">–</p><p class="nota" id="ar-d"></p></div>
+</section>
+
+<section class="calc" aria-labelledby="c-led">
+  <h3 id="c-led" style="margin-top:0">Lâmpadas LED no lugar das antigas</h3>
+  <div class="campos">
+    <div class="campo"><label for="l-n">Quantas lâmpadas</label><input id="l-n" type="number" min="0" value="8" inputmode="decimal"></div>
+    <div class="campo"><label for="l-a">Potência da lâmpada antiga (W)</label><input id="l-a" type="number" min="0" value="40" inputmode="decimal"><p class="ajuda">Incandescente: 60 W. Fluorescente compacta: 15 a 25 W.</p></div>
+    <div class="campo"><label for="l-l">Potência da LED (W)</label><input id="l-l" type="number" min="0" value="9" inputmode="decimal"></div>
+    <div class="campo"><label for="l-h">Horas acesas por dia</label><input id="l-h" type="number" min="0" max="24" value="5" inputmode="decimal"></div>
+  </div>
+  <div class="resultado" aria-live="polite"><p class="nota" style="margin:0">Economia estimada</p><p class="resultado-grande" id="l-r">–</p><p class="nota" id="l-d"></p></div>
+</section>
+
+<h2>O que costuma compensar</h2>
+<ul>
+  <li><strong>Pneus:</strong> estão entre os itens de carro com descontos mais frequentes, e pneu bom e calibrado gasta menos combustível. Confira a medida no manual ou na lateral do pneu atual.</li>
+  <li><strong>Eletrodomésticos com selo Procel A:</strong> gastam menos energia todo mês. Na geladeira e no ar, a diferença aparece na conta.</li>
+  <li><strong>Itens que você já ia comprar:</strong> faça a lista antes. A pior compra da Black Friday é a de impulso.</li>
+</ul>
+
+{% if cfg.amazon_tag %}
+<section class="afiliados">
+  <h2>Ofertas na Amazon</h2>
+  <ul class="chips chips-claros">
+    {% for rotulo, busca in [("Todas as ofertas", ""), ("Ar-condicionado inverter", "ar condicionado inverter"), ("Lâmpadas LED", "lampada led"), ("Pneus", "pneu aro"), ("Geladeira Procel A", "geladeira frost free inverter"), ("Air fryer", "air fryer"), ("Ventilador de teto", "ventilador de teto"), ("Tomada inteligente com medidor", "tomada inteligente medidor consumo"), ("Kindle", "kindle")] %}
+    <li><a href="{% if busca %}https://www.amazon.com.br/s?k={{ busca|urlencode }}&tag={{ cfg.amazon_tag }}{% else %}https://www.amazon.com.br/deals?tag={{ cfg.amazon_tag }}{% endif %}" rel="sponsored nofollow noopener" target="_blank">{{ rotulo }}</a></li>
+    {% endfor %}
+  </ul>
+  <p class="nota">Como associado da Amazon, o {{ cfg.nome_site }} ganha com compras qualificadas feitas por esses links, sem custo extra para você.</p>
+</section>
+{% endif %}
+
+{{ mc.faq([
+  ("Quando é a Black Friday " ~ ano_bf ~ "?", "Na sexta-feira, " ~ bf_data|data_br ~ ". A Cyber Monday é na segunda-feira seguinte, e muitas lojas fazem promoções durante todo o mês de novembro."),
+  ("Posso desistir de uma compra feita na Black Friday?", "Sim. Compras pela internet ou por telefone podem ser canceladas em até 7 dias após o recebimento, com devolução do valor pago."),
+  ("Ar-condicionado inverter vale a pena?", "Para quem usa várias horas por dia, sim: o compressor trabalha em velocidade variável e gasta menos energia. Use a calculadora acima com o seu uso para ver em quanto tempo a diferença de preço se paga.")
+]) }}
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if bf_ativa %}
+<script>
+(function () {
+  function v(id) { return BH.ler(document.getElementById(id)) || 0; }
+  function ar() {
+    var kwh = v("ar-w") / 1000 * v("ar-h") * 30, eco = kwh * v("ar-e") / 100 * v("ar-t");
+    document.getElementById("ar-r").textContent = BH.brl(eco, 2) + " por mês";
+    document.getElementById("ar-d").textContent = "Cerca de " + BH.brl(eco * 12, 0) + " por ano. O aparelho atual gasta perto de " + BH.num(kwh, 0) + " kWh por mês (" + BH.brl(kwh * v("ar-t"), 2) + ").";
+  }
+  function led() {
+    var kwh = v("l-n") * (v("l-a") - v("l-l")) / 1000 * v("l-h") * 30, eco = kwh * v("ar-t");
+    document.getElementById("l-r").textContent = BH.brl(eco, 2) + " por mês";
+    document.getElementById("l-d").textContent = "São " + BH.num(kwh, 0) + " kWh a menos por mês, ou " + BH.brl(eco * 12, 0) + " por ano.";
+  }
+  ["ar-h", "ar-w", "ar-e", "ar-t"].forEach(function (i) { document.getElementById(i).addEventListener("input", function () { ar(); led(); }); });
+  ["l-n", "l-a", "l-l", "l-h"].forEach(function (i) { document.getElementById(i).addEventListener("input", led); });
+  ar(); led();
+})();
+</script>
+{% endif %}
+{% endblock %}
