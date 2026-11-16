@@ -10,7 +10,7 @@ import json
 import shutil
 import sys
 from collections import defaultdict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
@@ -169,29 +169,45 @@ def montar_combustiveis():
         cidades.append(c)
     cidades.sort(key=lambda c: (c["uf"], c["slug"]))
 
-    # todos os postos da semana, com histórico de preço de cada um
+    # postos: os da semana e também os que a ANP pesquisou nas últimas 12 semanas (a amostra muda
+    # toda semana; manter a página evita links quebrados e mostra a última coleta daquele posto)
     rev = ler_json(DADOS / "anp" / "revendas.json") or {}
     rev = rev.get("postos", {}) if rev.get("semana_fim") == fim else {}
-    hist_p = ler_json(DADOS / "anp" / "revendas_hist.json") or {} if rev else {}
+    hist_p = ler_json(DADOS / "anp" / "revendas_hist.json") or {}
+    cad = ler_json(DADOS / "anp" / "postos_cadastro.json") or {}
+    for cnpj, t in rev.items():
+        cad.setdefault(cnpj, {k: v for k, v in t.items() if k != "precos"} | {"visto": fim})
+    limite = (date.fromisoformat(fim) - timedelta(weeks=12)).isoformat() if fim else ""
     por_cidade = {f"{c['uf']}|{k}": c for c in cidades for k in [c.get("chave_anp")] if k}
     por_url = {}
-    for cnpj, t in rev.items():
+    for cnpj in sorted(cad):
+        t = cad[cnpj]
         c = por_cidade.get(f"{t['uf']}|{t['cidade']}")
-        if not c:
+        if not c or t.get("visto", "") < limite:
             continue
+        h = hist_p.get(cnpj, {})
+        if cnpj in rev:
+            precos, na_semana, semana = rev[cnpj]["precos"], True, fim
+            coleta = rev[cnpj].get("coleta", "")
+        else:
+            precos = {prod: serie[-1][1] for prod, serie in h.items() if serie and serie[-1][0] == t["visto"]}
+            if not precos:
+                continue
+            na_semana, semana, coleta = False, t["visto"], ""
         base = f"{slug(t['nome'])[:60].strip('-') or 'posto'}-{cnpj[-6:]}"
         url = f"/postos/{c['uf'].lower()}/{c['slug']}/{base}/"
         n = 2
         while url in por_url:
             url = f"/postos/{c['uf'].lower()}/{c['slug']}/{base}-{n}/"
             n += 1
-        posto = dict(t, cnpj=cnpj, url=url, cidade_obj=c, hist=hist_p.get(cnpj, {}))
+        posto = dict(t, cnpj=cnpj, url=url, cidade_obj=c, hist=h, precos=precos, atual=na_semana, semana=semana,
+                     coleta=coleta or t.get("coleta", ""))
         por_url[url] = posto
         c.setdefault("lista_postos", []).append(posto)
     url_cnpj = {p["cnpj"]: p["url"] for p in por_url.values()}
     url_nome = {(p["uf"], p["cidade"], p["nome"], p["endereco"]): p["url"] for p in por_url.values()}
     for c in cidades:
-        c["lista_postos"] = sorted(c.get("lista_postos", []), key=lambda p: (p["precos"].get("gasolina", 99), p["nome"]))
+        c["lista_postos"] = sorted(c.get("lista_postos", []), key=lambda p: (not p["atual"], p["precos"].get("gasolina", 99), p["nome"]))
         if c["lista_postos"]:
             c["url_postos"] = f"/postos/{c['uf'].lower()}/{c['slug']}/"
         for lst in c["postos"].values():
@@ -216,7 +232,6 @@ def montar_combustiveis():
             c["pos_estado"], c["total_estado"] = i, len(com_g)
 
     brasil = {"produtos": atual.get(("brasil", "", ""), {}), "serie": series[("brasil", "", "")]}
-    from datetime import timedelta
     proxima = (date.fromisoformat(fim) + timedelta(days=9)).isoformat()
     return {"inicio": ultima["semana_inicio"], "fim": fim, "anterior": anterior, "semanas": semanas, "proxima": proxima,
             "cidades": cidades, "estados": estados, "brasil": brasil, "total_postos": len(por_url)}
@@ -634,7 +649,7 @@ def main():
                 if c.get("lista_postos"):
                     pagina(c["url_postos"], "postos_cidade.html", 0.6, c=c, est=est)
                     for p in c["lista_postos"]:
-                        outros = [o for o in c["lista_postos"] if o is not p and "gasolina" in o["precos"]][:8]
+                        outros = [o for o in c["lista_postos"] if o is not p and o["atual"] and "gasolina" in o["precos"]][:8]
                         pagina(p["url"], "posto.html", 0.5, c=c, est=est, p=p, outros=outros)
                 for prod in c["produtos"]:
                     if prod == "gasolina" or prod not in PROD_SLUG:

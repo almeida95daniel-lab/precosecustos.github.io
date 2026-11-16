@@ -10,16 +10,17 @@
 <p class="lead">{% if band %}Bandeira {{ band }}. {% endif %}{{ p.endereco }}{% if p.bairro %}, {{ p.bairro }}{% endif %}, {{ c.nome }} ({{ c.uf }}).
 <a href="https://www.google.com/maps/search/?api=1&amp;query={{ (p.nome ~ ', ' ~ p.endereco ~ ', ' ~ c.nome ~ ' ' ~ c.uf)|urlencode }}" rel="nofollow noopener" target="_blank">Ver no mapa</a></p>
 
+{% if not p.atual %}<div class="veredito"><strong>Última coleta: semana encerrada em {{ p.semana|data_br }}</strong><p>Este posto não entrou na amostra da ANP desta semana (a agência sorteia parte dos postos a cada levantamento). Os preços abaixo são da última vez em que ele foi pesquisado.</p></div>{% endif %}
 <div class="placa">
   {% for prod, v in p.precos.items() %}
-  {% set med = c.produtos.get(prod) %}
+  {% set med = c.produtos.get(prod) if p.atual else none %}
   <div class="placa-linha">
     <span class="placa-nome">{{ PRODUTOS[prod].nome }}</span>
     <span class="placa-preco"><small>R$</small>{{ v|num(2 if ((v*1000)|round|int) % 10 == 0 else 3) }}</span>
     <span class="placa-sub">{% if med %}{% set dif = (v / med.medio - 1) * 100 %}{% if dif|abs < 0.5 %}na média da cidade{% elif dif < 0 %}{{ (-dif)|num(1) }}% abaixo da média ({{ med.medio|brl }}){% else %}{{ dif|num(1) }}% acima da média ({{ med.medio|brl }}){% endif %}{% else %}por {{ PRODUTOS[prod].unidade }}{% endif %}</span>
   </div>
   {% endfor %}
-  <p class="placa-rodape">Coletado pela ANP em {{ p.coleta }}. Confirme na bomba: o preço pode ter mudado.</p>
+  <p class="placa-rodape">{% if p.atual %}Coletado pela ANP em {{ p.coleta }}{% else %}Coleta da semana encerrada em {{ p.semana|data_br }}{% endif %}. Confirme na bomba: o preço pode ter mudado.</p>
 </div>
 
 {% set prod_h = "gasolina" if p.hist.get("gasolina") else (p.hist.keys()|list|first if p.hist else none) %}

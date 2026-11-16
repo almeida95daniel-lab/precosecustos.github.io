@@ -216,6 +216,13 @@ def registrar_postos(todos, fim):
             serie = [x for x in h.get(prod, []) if x[0] != chave] + [[chave, preco]]
             h[prod] = sorted(serie)[-SEMANAS_HIST_POSTO:]
     salvar_json(PASTA / "revendas_hist.json", hist)
+    # cadastro de todos os postos já vistos: a ANP sorteia parte dos postos a cada semana,
+    # então a página de um posto continua no ar (com a última coleta) quando ele fica de fora
+    cad = ler_json(PASTA / "postos_cadastro.json", {})
+    for cnpj, t in todos.items():
+        if cad.get(cnpj, {}).get("visto", "") <= chave:
+            cad[cnpj] = {k: v for k, v in t.items() if k != "precos"} | {"visto": chave}
+    salvar_json(PASTA / "postos_cadastro.json", cad)
 
 
 # ---------------------------------------------------------------- histórico
@@ -375,7 +382,7 @@ def main():
                 except Exception as e:
                     print(f"[ANP] planilha de postos indisponível ({e}); páginas sairão sem a lista de postos.")
 
-    if not args.resumo and not (PASTA / "revendas_hist.json").exists():
+    if not args.resumo and not (PASTA / "postos_cadastro.json").exists():
         preencher_postos(semanas)
 
     gravar_historico(historico)
