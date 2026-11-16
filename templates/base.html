@@ -29,6 +29,8 @@
 <meta name="google-adsense-account" content="{{ cfg.adsense_cliente }}">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ cfg.adsense_cliente }}" crossorigin="anonymous"></script>
 {% endif %}
+{% if cfg.bing_verificacao %}<meta name="msvalidate.01" content="{{ cfg.bing_verificacao }}">
+{% endif %}
 {% if cfg.google_analytics %}
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ cfg.google_analytics }}"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ cfg.google_analytics }}');</script>
