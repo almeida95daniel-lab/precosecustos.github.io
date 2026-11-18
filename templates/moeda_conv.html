@@ -11,7 +11,7 @@
   {% set cartao = res / ((1 + 0.04) * (1 + iof / 100)) %}
 {% endif %}
 {% block titulo %}{{ titulo_txt|capitalize }} hoje: {{ res_txt }} ({{ m.data|data_br }}) | {{ cfg.nome_site }}{% endblock %}
-{% block descricao %}Quanto dá {{ titulo_txt }} hoje: {{ res_txt }} pela cotação oficial de {{ m.data|data_br }}. Veja também o valor com IOF e taxa do cartão.{% endblock %}
+{% block descricao %}Quanto dá {{ titulo_txt }} hoje: {{ res_txt }} pela cotação oficial de {{ m.data|data_br }}. No cartão de crédito, com IOF e taxa do banco, fica perto de {{ (cartao|brl(2)) if cv.sentido == "ext" else (m.simbolo ~ " " ~ cartao|num(2)) }}.{% endblock %}
 {% block conteudo %}
 {{ mc.trilha([("/", "Início"), ("/moedas/", "Moedas"), (m.url, m.nome), (None, titulo_txt|capitalize)]) }}
 <h1>Quanto é {{ titulo_txt }} hoje?</h1>

@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m %}
 {% set n = c.lista_postos|length %}
-{% block titulo %}Postos de gasolina em {{ c.nome }} ({{ c.uf }}): preço em {{ n }} postos | {{ cfg.nome_site }}{% endblock %}
-{% block descricao %}Lista dos {{ n }} postos de {{ c.nome }} pesquisados pela ANP, com preço da gasolina, etanol e diesel em cada um. Pesquisa de {{ comb.fim|data_br }}.{% endblock %}
+{% set baratos = c.lista_postos|selectattr("atual")|selectattr("precos.gasolina", "defined")|sort(attribute="precos.gasolina")|list %}
+{% set pb = baratos[0] if baratos else none %}
+{% block titulo %}Postos de gasolina em {{ c.nome }} ({{ c.uf }}){% if pb %}: o mais barato a {{ pb.precos.gasolina|brl }}{% else %}: preço em {{ n }} postos{% endif %} | {{ cfg.nome_site }}{% endblock %}
+{% block descricao %}{% if pb %}Gasolina mais barata de {{ c.nome }}: {{ pb.nome }}, a {{ pb.precos.gasolina|brl }}. {% endif %}Compare o preço de gasolina, etanol e diesel em {{ n }} postos, com endereço. Pesquisa ANP de {{ comb.fim|data_br }}.{% endblock %}
 {% block conteudo %}
 {{ m.trilha([("/", "Início"), ("/combustivel/", "Combustível"), (est.url, est.nome), (c.url, c.nome), (None, "Postos")]) }}
 <h1>Postos de gasolina em {{ c.nome }} ({{ c.uf }})</h1>
