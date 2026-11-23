@@ -43,6 +43,8 @@ def baixar_um(urls, **kw):
         try:
             return baixar(u, **kw)
         except FileNotFoundError as e:
+            ultimo = ultimo if isinstance(ultimo, RuntimeError) else e
+        except RuntimeError as e:  # conexão recusada: ainda tenta os outros nomes
             ultimo = e
     raise ultimo or FileNotFoundError(urls)
 
@@ -86,6 +88,8 @@ def descobrir_semanas():
         if fim <= mais_nova or (ini, fim) in semanas:
             continue
         nomes = [f"{ini:%Y_%m_%d}-{fim:%Y_%m_%d}.xlsx", f"{ini:%Y-%m-%d}_{fim:%Y-%m-%d}.xlsx"]
+        if k < 2:  # semanas mais novas: a ANP às vezes troca o separador; testa variações
+            nomes += [f"{ini:%Y-%m-%d}-{fim:%Y-%m-%d}.xlsx", f"{ini:%Y_%m_%d}_{fim:%Y_%m_%d}.xlsx"]
         semanas[(ini, fim)] = {
             "resumo": [f"{BASE}/{fim.year}/resumo_semanal_lpc_{n}" for n in nomes],
             "revendas": [f"{BASE}/{fim.year}/revendas_lpc_{n}" for n in nomes],
@@ -350,7 +354,8 @@ def main():
         except FileNotFoundError:
             continue  # semana adivinhada que não existe
         except Exception as e:
-            if not urls.get("adivinhado"):
+            # semana adivinhada recente que não é 404: o portal pode estar recusando a conexão
+            if not urls.get("adivinhado") or (date.today() - fim).days < 14:
                 print(f"[ANP] erro na semana {fim}: {e}")
             continue
         if not conteudo.startswith(b"PK"):

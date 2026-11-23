@@ -8,6 +8,7 @@
       "contextos": [
         "combustivel",
         "carro",
+        "moto",
         "luz",
         "gas",
         "viagem",
@@ -21,6 +22,15 @@
           "contextos": [
             "combustivel",
             "carro"
+          ]
+        },
+        {
+          "nome": "Calibrador de pneus digital",
+          "busca": "calibrador de pneus digital portatil",
+          "por_que": "pneu calibrado gasta menos combustível e dura mais",
+          "contextos": [
+            "combustivel",
+            "moto"
           ]
         },
         {
@@ -55,6 +65,22 @@
           "contextos": [
             "dinheiro"
           ]
+        },
+        {
+          "nome": "Panela de pressão",
+          "busca": "panela de pressao",
+          "por_que": "cozinha em menos tempo e gasta menos gás",
+          "contextos": [
+            "gas"
+          ]
+        },
+        {
+          "nome": "Adaptador de tomada universal",
+          "busca": "adaptador tomada universal viagem",
+          "por_que": "comprar antes sai mais barato que no aeroporto ou no destino",
+          "contextos": [
+            "viagem"
+          ]
         }
       ]
     },
@@ -65,7 +91,8 @@
       "contextos": [
         "combustivel",
         "carro",
-        "viagem"
+        "viagem",
+        "moto"
       ],
       "itens": [
         {
@@ -83,6 +110,53 @@
           "por_que": "evita comprar água e café caros na estrada e no aeroporto",
           "contextos": [
             "viagem"
+          ]
+        },
+        {
+          "nome": "Kit de reparo de pneu sem câmara",
+          "busca": "kit reparo pneu sem camara",
+          "por_que": "conserta um furo simples na estrada e evita pagar guincho",
+          "contextos": [
+            "carro",
+            "moto"
+          ]
+        }
+      ]
+    },
+    {
+      "nome": "Natal",
+      "de": "11-25",
+      "ate": "12-23",
+      "contextos": [
+        "dinheiro",
+        "carro",
+        "moto",
+        "luz"
+      ],
+      "itens": [
+        {
+          "nome": "Kindle (presente que dura)",
+          "busca": "kindle",
+          "por_que": "livros digitais costumam custar menos que os impressos",
+          "contextos": [
+            "dinheiro"
+          ]
+        },
+        {
+          "nome": "Calibrador de pneus digital",
+          "busca": "calibrador de pneus digital portatil",
+          "por_que": "presente útil: pneu calibrado gasta menos combustível",
+          "contextos": [
+            "carro",
+            "moto"
+          ]
+        },
+        {
+          "nome": "Pisca-pisca de LED",
+          "busca": "pisca pisca led natal",
+          "por_que": "a decoração de LED gasta bem menos energia que a de lâmpadas comuns",
+          "contextos": [
+            "luz"
           ]
         }
       ]
@@ -148,35 +222,6 @@
           "nome": "Guarda-sol e cadeira de praia",
           "busca": "kit guarda sol cadeira praia",
           "por_que": "alugar na praia todo dia sai mais caro que comprar"
-        }
-      ]
-    },
-    {
-      "nome": "Natal",
-      "de": "11-25",
-      "ate": "12-23",
-      "contextos": [
-        "dinheiro",
-        "carro",
-        "viagem"
-      ],
-      "itens": [
-        {
-          "nome": "Kindle (presente que dura)",
-          "busca": "kindle",
-          "por_que": "livros digitais costumam custar menos que os impressos",
-          "contextos": [
-            "dinheiro",
-            "viagem"
-          ]
-        },
-        {
-          "nome": "Aspirador de pó automotivo",
-          "busca": "aspirador automotivo portatil",
-          "por_que": "presente útil para quem tem carro",
-          "contextos": [
-            "carro"
-          ]
         }
       ]
     },
@@ -351,6 +396,31 @@
           "nome": "Caderno de controle de gastos",
           "busca": "caderno controle de gastos",
           "por_que": "anotar os gastos ajuda a decidir o que fazer com o 13º"
+        },
+        {
+          "nome": "Planner financeiro",
+          "busca": "planner financeiro",
+          "por_que": "ajuda a planejar as contas do começo do ano, como IPVA e IPTU"
+        }
+      ]
+    },
+    {
+      "nome": "Cozinha de fim de ano",
+      "de": "12-02",
+      "ate": "01-31",
+      "contextos": [
+        "gas"
+      ],
+      "itens": [
+        {
+          "nome": "Panela de pressão",
+          "busca": "panela de pressao",
+          "por_que": "cozinha feijão e carnes em menos tempo e gasta menos gás"
+        },
+        {
+          "nome": "Regulador de gás com manômetro",
+          "busca": "regulador gas glp com manometro",
+          "por_que": "mostra quanto gás resta e evita trocar o botijão antes da hora"
         }
       ]
     }

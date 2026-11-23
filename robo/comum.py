@@ -127,7 +127,37 @@ def baixar(url: str, tentativas: int = 3, timeout: int = 60) -> bytes:
         except Exception as e:  # rede instável: tenta de novo
             ultimo = e
             time.sleep(3 * (i + 1))
+    # Reserva: alguns portais do governo (gov.br) derrubam a conexão do Python
+    # ("Connection reset by peer") mas aceitam o curl, que negocia a conexão de outro jeito.
+    conteudo = _baixar_curl(url, timeout)
+    if conteudo is not None:
+        print(f"[rede] {url[:90]}… baixado pela reserva (curl)")
+        return conteudo
     raise RuntimeError(f"Falha ao baixar {url}: {ultimo}")
+
+
+def _baixar_curl(url: str, timeout: int):
+    """Baixa com o curl do sistema; devolve None se o curl não existir ou falhar.
+    Levanta FileNotFoundError em 404, como baixar()."""
+    import shutil
+    import subprocess
+
+    if not shutil.which("curl"):
+        return None
+    marca = b"\n__BH_STATUS__:"
+    try:
+        r = subprocess.run(
+            ["curl", "-sSL", "--compressed", "--max-time", str(timeout), "--retry", "1",
+             "-A", UA, "-H", "Accept-Language: pt-BR", "-w", marca.decode() + "%{http_code}", url],
+            capture_output=True, timeout=timeout * 3 + 10)
+    except Exception:
+        return None
+    corpo, _, codigo = r.stdout.rpartition(marca)
+    if codigo.strip() == b"404":
+        raise FileNotFoundError(url)
+    if r.returncode != 0 or not codigo.strip().startswith(b"2"):
+        return None
+    return corpo
 
 
 def salvar_json(caminho: Path, dados) -> None:
